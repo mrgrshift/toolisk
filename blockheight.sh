@@ -188,7 +188,7 @@ local_height() {
 	if [ -n "$is_forked" ]
 	then
 		echo "Found fork: $is_forked"
-		found_fork_alert $is_forked
+		found_fork_alert "$is_forked"
 	fi
 
         diff=$(( $HEIGHT - $CHECKSRV ))

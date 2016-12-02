@@ -31,7 +31,7 @@ while true; do
             echo "Switching to Server $IP_SERVER to try and forge"
             sleep 3
         fi
-    echo "Everything is Okay $TIME"
+    echo "Last time consensus checked: $TIME - $LASTLINE"
     sleep 10
 done
 

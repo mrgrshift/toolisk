@@ -7,10 +7,10 @@ CHECKSRV=1
 first_node() {
         ## Get height of first server
         HEIGHT=1
-        HEIGHT=`curl -s "http://127.0.0.1:8000/api/peers"| jq '.peers[0].height$
+        HEIGHT=`curl -s "http://127.0.0.1:8000/api/peers"| jq '.peers[0].height'`
         if [ -z "$HEIGHT" ]
         then
-                HEIGHT=`curl -s "http://127.0.0.1:8000/api/peers"| jq '.peers[0$
+                HEIGHT=`curl -s "http://127.0.0.1:8000/api/peers"| jq '.peers[0].height'`
         fi
 }
 
@@ -18,7 +18,7 @@ loop_nodes() {
         ## Get height of rest of the servers and see if any are higher
         for i in `seq 1 99`;
     do
-                CHECKSRV=`curl -s "http://localhost:8000/api/peers"| jq ".peers$
+                CHECKSRV=`curl -s "http://localhost:8000/api/peers"| jq ".peers[$i].height"`
                 if [[ ${CHECKSRV+1} && "$CHECKSRV" -gt "$HEIGHT" ]];
                 then
                         HEIGHT=$CHECKSRV

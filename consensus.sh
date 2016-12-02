@@ -1,6 +1,7 @@
 #!/bin/bash
 source configtoolisk.sh
 
+
 echo "Start consensus watcher" > $CONSENSUS_LOG
 while true; do
    TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
@@ -29,7 +30,8 @@ while true; do
 
             echo
             echo "Switching to Server $IP_SERVER to try and forge"
-            sleep 3
+	    bash ~/lisk-main/lisk.sh reload
+            sleep 60
         fi
     LASTLINE=$(tail ~/lisk-main/logs/lisk.log -n 2| grep 'consensus')
     echo "Last time consensus checked: $TIME - $LASTLINE"

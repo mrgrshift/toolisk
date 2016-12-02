@@ -31,6 +31,7 @@ while true; do
             echo "Switching to Server $IP_SERVER to try and forge"
             sleep 3
         fi
+    LASTLINE=$(tail ~/lisk-main/logs/lisk.log -n 2| grep 'consensus')
     echo "Last time consensus checked: $TIME - $LASTLINE"
     sleep 10
 done

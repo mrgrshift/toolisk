@@ -185,7 +185,7 @@ local_height() {
 	get_local_height
 
 	is_forked=`tail /home/$USERTOOL/lisk-main/logs/lisk.log -n 20 | grep "Fork"`
-	if[ -n "$is_forked" ]
+	if [ -n "$is_forked" ]
 	then
 		echo "Found fork: $is_forked"
 		found_fork_alert $is_forked

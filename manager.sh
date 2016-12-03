@@ -65,15 +65,28 @@ validate_heights(){
     fi
 }
 
+get_broadhash(){
+        ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
+                /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2];$
+                p' | tac)
+
+    if ! [ -z "$ACTUAL_BROADHASH_CONSENSUS" ]
+    then
+    if ! [[ "$ACTUAL_BROADHASH_CONSENSUS" =~ ^[0-9]+$ ]];
+        then
+            ACTUAL_BROADHASH_CONSENSUS="0"
+        fi
+    else
+            ACTUAL_BROADHASH_CONSENSUS="0"
+    fi
+}
 
 while true; do
         top_height
         get_own_height
         validate_heights
+	get_broadhash
 
-        ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
-                /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
-                p' | tac)
         if [ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ]
         then
                 ((BAD_CONSENSUS+=1))

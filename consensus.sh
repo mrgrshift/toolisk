@@ -1,6 +1,21 @@
 #!/bin/bash
 source configtoolisk.sh
 
+get_broadhash(){
+        ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
+                /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2];$
+                p' | tac)
+
+    if ! [ -z "$ACTUAL_BROADHASH_CONSENSUS" ]
+    then
+    if ! [[ "$ACTUAL_BROADHASH_CONSENSUS" =~ ^[0-9]+$ ]];
+        then
+            ACTUAL_BROADHASH_CONSENSUS="0"
+        fi
+    else
+            ACTUAL_BROADHASH_CONSENSUS="0"
+    fi
+}
 
 echo "Start process.. Looking for Inadequate broadhash" > $CONSENSUS_LOG
 while true; do
@@ -34,9 +49,7 @@ while true; do
             sleep 20
         fi
 
-	ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
-                /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
-                p' | tac)
+	get_broadhash
     echo "Last time consensus checked: $TIME - $ACTUAL_BROADHASH_CONSENSUS %"
     echo "Last time consensus checked: $TIME - $ACTUAL_BROADHASH_CONSENSUS %" >> $CONSENSUS_LOG
     sleep 10

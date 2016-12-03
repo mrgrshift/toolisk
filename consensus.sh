@@ -34,12 +34,12 @@ while true; do
                 if [ $? = 0 ]; then
                    echo -e "${GREEN}Forging enabled successfully in remote server${OFF}"
                    echo "Forging enabled successfully in remote server" >> $CONSENSUS_LOG
-                   MG_SUBJECT="$DELEGATE_NAME Inadequate broadhash inadequate - Forging enabled in remote server"
-                   MG_TEXT="$DELEGATE_NAME broadhash inadequate - Forging enabled in remote server $URL_REMOTE. Error: $LASTLINE"
+                   MG_SUBJECT="$DELEGATE_NAME Inadequate broadhash in $SERVER_NAME - Forging enabled in remote server"
+                   MG_TEXT="$DELEGATE_NAME Inadequate broadhash in $SERVER_NAME "$'\r\n'"Forging enabled in remote server $URL_REMOTE"$'\r\n'"Error:"$'\r\n'"$LASTLINE"
                 else
                    echo -e "${RED}ERROR in switching Forging - Forging not enabled!${OFF}"
-                   MG_SUBJECT="$DELEGATE_NAME broadhash inadequate - Forging not enabled!"
-                   MG_TEXT="$DELEGATE_NAME broadhash inadequate. ERROR in switching Forging: $RESPONSE - Forging not enabled!. Error $LASTLINE"
+                   MG_SUBJECT="$DELEGATE_NAME Inadequate broadhash in $SERVER_NAME - Forging $RESPONSE"
+                   MG_TEXT="$DELEGATE_NAME Inadequate broadhash in $SERVER_NAME"$'\r\n'"ERROR in switching Forging:"$'\r\n'"$RESPONSE"$'\r\n'"Error:"$'\r\n'"$LASTLINE"
                 fi
 
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"

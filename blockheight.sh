@@ -6,6 +6,7 @@ source configtoolisk.sh
 
 HEIGHT=1	#Highest height
 CHECKSRV=1	#Local height
+BAD_CONSENSUS="0"
 SRV="127.0.0.1:8000"
 
 top_height(){
@@ -21,7 +22,7 @@ top_height(){
 
         if ! [[ "$HEIGHT" =~ ^[0-9]+$ ]];
             then
-                echo $SRV " " "is off?"
+                echo "$SERVER_NAME is off?"
                 HEIGHT="0"
             fi
 }
@@ -36,13 +37,13 @@ get_local_height(){
 
         if ! [[ "$CHECKSRV" =~ ^[0-9]+$ ]];
             then
-                echo $SRV " " "is off?"
+                echo "$SERVER_NAME is off?"
                 CHECKSRV="0"
             fi
 }
 
 get_broadhash(){
-ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
+	ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
                 /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
                 p' | tac)
 
@@ -109,15 +110,14 @@ rebuild_alert(){
                 echo $RESPONSE | grep "true" > /dev/null
                if [ $? = 0 ]; then
                    echo -e "${GREEN}Forging activated successfully${OFF}"
-
-                   MG_SUBJECT="$DELEGATE_NAME rebuild started Forging enabled successfully in $IP_SERVER"
-                   MG_TEXT="$DELEGATE_NAME rebuild started Highest: $HEIGHT - Local: $CHECKSRV Forging enabled successfully in $IP_SERVER  $RESPONSE"
                    echo "Forging enabled > $RESPONSE" >> $BLOCKHEIGHT_LOG
+                   MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started Forging enabled successfully in remote $IP_SERVER"
+                   MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging enabled successfully in remote $IP_SERVER"$'\r\n'"Response:"$'\r\n'"$RESPONSE"
                 else
                    echo -e "${RED}Forging not enabled${OFF} - $RESPONSE"
                    echo "Forging NOT enabled! > $RESPONSE" >> $BLOCKHEIGHT_LOG
-                   MG_SUBJECT="$DELEGATE_NAME rebuild started -- Forging $RESPONSE"
-                   MG_TEXT="$DELEGATE_NAME rebuild started Highest: $HEIGHT - Local: $CHECKSRV Forging not enabled! $RESPONSE"
+                   MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started -- Forging $RESPONSE"
+                   MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started "$'\r\n'"Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging not enabled! Response: "$'\r\n'"$RESPONSE"
                 fi
 
                 echo "Starting rebuild at $TIME"
@@ -163,7 +163,7 @@ start_reload(){
 	echo "Starting reload at $TIME"
 
         bash lisk.sh reload
-        sleep 20
+        sleep 10
         echo "Reload finished"
 }
 
@@ -179,25 +179,26 @@ found_fork_alert(){
                if [ $? = 0 ]; then
                    echo -e "${GREEN}Forging activated successfully${OFF}"
 
-                   MG_SUBJECT="$DELEGATE_NAME reload. Started Forging enabled successfully in $IP_SERVER"
-                   MG_TEXT="$DELEGATE_NAME reload started. Found fork: $FORK  ---  Forging enabled successfully in $IP_SERVER  $RESPONSE"
+                   MG_SUBJECT="$DELEGATE_NAME reload in $SERVER_NAME found fork. Started Forging enabled successfully in $IP_SERVER"
+                   MG_TEXT="$DELEGATE_NAME reload started in $SERVER_NAME. "$'\r\n'"Found fork: $FORK "$'\r\n'"Forging enabled successfully in $IP_SERVER Response: "$'\r\n'"$RESPONSE"
                    echo "Forging enabled in $IP_SERVER > $RESPONSE" >> $BLOCKHEIGHT_LOG
                 else
                    echo -e "${RED}Forging not enabled!${OFF} - $RESPONSE"
                    echo "Forging NOT enabled! > $RESPONSE" >> $BLOCKHEIGHT_LOG
-                   MG_SUBJECT="$DELEGATE_NAME reload. Forging not enabled! Found fork"
-                   MG_TEXT="$DELEGATE_NAME reload started. Found fork: $FORK ---  Forging not enabled! $RESPONSE"
+                   MG_SUBJECT="$DELEGATE_NAME reload in $SERVER_NAME found fork. Forging $RESPONSE"
+                   MG_TEXT="$DELEGATE_NAME reload started in $SERVER_NAME."$'\r\n'"Found fork: "$'\r\n'"$FORK "$'\r\n\r\n'"Forging not enabled. Response:"$'\r\n'"$RESPONSE"
                 fi
 
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
 	bash lisk.sh reload
-	sleep 20
+	sleep 10
 }
 
 local_height() {
     ## Get height of this server and see if it's greater or within 4 of the highest
 	get_local_height
+        get_broadhash
 
 	is_forked=`tail logs/lisk.log -n 20 | grep "Fork"`
 	if [ -n "$is_forked" ]
@@ -216,12 +217,30 @@ local_height() {
                 if [ "$diff" -gt "4" ]
                 then
                         rebuild_alert
-                        echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV"
+                        echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"
                         #bash lisk.sh rebuild
 			find_newest_snap_rebuild
                         check_if_rebuild_finish
                         post_rebuild
                 fi
+        fi
+
+        if [ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ]
+        then
+                ((BAD_CONSENSUS+=1))
+        else
+                BAD_CONSENSUS="0"
+        fi
+
+        if [ "$BAD_CONSENSUS" -eq "5" ]
+        then
+		#If the low consensus is repeated many times make rebuild
+                rebuild_alert
+                echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"
+                #bash lisk.sh rebuild
+                find_newest_snap_rebuild
+                check_if_rebuild_finish
+                post_rebuild
         fi
 }
 
@@ -239,9 +258,9 @@ while true; do
 	fi
 
 	get_broadhash
-        echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) -- $TIME"
-        echo "Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) -- $TIME" >> $BLOCKHEIGHT_LOG
-        sleep 10
+        echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME"
+        echo "Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME" >> $BLOCKHEIGHT_LOG
+        sleep 9
 done
 
 

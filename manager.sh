@@ -66,10 +66,9 @@ validate_heights(){
 }
 
 get_broadhash(){
-ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
+    ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
                 /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
                 p' | tac)
-
 
     if ! [ -z "$ACTUAL_BROADHASH_CONSENSUS" ]
     then
@@ -120,7 +119,7 @@ while true; do
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
         fi
 
-        if [ "$BAD_CONSENSUS" -eq "4" ]
+        if [ "$BAD_CONSENSUS" -eq "3" ]
         then
                 echo "lisk.sh reload"
                 bash lisk.sh reload

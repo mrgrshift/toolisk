@@ -114,9 +114,9 @@ rebuild_alert(){
                    MG_TEXT="$DELEGATE_NAME rebuild started Highest: $HEIGHT - Local: $CHECKSRV Forging enabled successfully in $IP_SERVER  $RESPONSE"
                    echo "Forging enabled > $RESPONSE" >> $BLOCKHEIGHT_LOG
                 else
-                   echo -e "${RED}Forging not enabled!${OFF} - $RESPONSE"
+                   echo -e "${RED}Forging not enabled${OFF} - $RESPONSE"
                    echo "Forging NOT enabled! > $RESPONSE" >> $BLOCKHEIGHT_LOG
-                   MG_SUBJECT="$DELEGATE_NAME Forging not enabled!"
+                   MG_SUBJECT="$DELEGATE_NAME rebuild started -- Forging $RESPONSE"
                    MG_TEXT="$DELEGATE_NAME rebuild started Highest: $HEIGHT - Local: $CHECKSRV Forging not enabled! $RESPONSE"
                 fi
 
@@ -133,8 +133,8 @@ post_rebuild(){
 		get_local_height
 		get_broadhash
 
-                MG_SUBJECT="$DELEGATE_NAME synchronization ended Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
-                MG_TEXT="$DELEGATE_NAME synchronization ended Highest: $HEIGHT - rebuild: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
+                MG_SUBJECT="$DELEGATE_NAME rebuild synchronization ended Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
+                MG_TEXT="$DELEGATE_NAME rebuild synchronization ended Highest: $HEIGHT - rebuild: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 }
 

@@ -96,24 +96,27 @@ while true; do
         fi
 
         forgning=""
+	TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
         diff=$(( $HEIGHT - $LOCAL_HEIGHT ))
         diff2=$(( $HEIGHT - $REMOTE_HEIGHT ))
-        if [ "$diff" -gt "$diff2" ] && [ "$ACTUAL_BROADHASH_CONSENSUS" -gt "51" ]
+        if [ "$diff" -gt "$diff2" ] && [ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ]
         then
                 #enable remote forging
-                echo "Enable remote forging" >> $MANAGER_LOG
+                echo "$TIME Enable remote forging -- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
                 RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 echo $RESPONSE >> $MANAGER_LOG
                 forging="remote"
-                echo "Disable local forging" >> $MANAGER_LOG
+		echo
+                echo "$TIME Disable local forging" >> $MANAGER_LOG
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE >> $MANAGER_LOG
         else
                 #enable local forging
-                echo "Enable local forging" >> $MANAGER_LOG
+                echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
                 RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL)
                 echo $RESPONSE >> $MANAGER_LOG
                 forging="local"
-                echo "Disable remote forging" >> $MANAGER_LOG
+		echo
+                echo "$TIME Disable remote forging" >> $MANAGER_LOG
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
         fi
 

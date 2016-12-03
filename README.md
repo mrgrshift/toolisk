@@ -15,4 +15,4 @@ After you install it you con run the following scripts:<br>
 <br>
 
 ###Disclaimer
-Use at your own risk. Read the code and if it suits your need you can use it.
+Use at your own risk. Read the code and if it suits your needs you can use it.

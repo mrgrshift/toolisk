@@ -71,7 +71,7 @@ while true; do
         get_own_height
         validate_heights
 
-        ACTUAL_BROADHASH_CONSENSUS=$(tac ~/lisk-main/logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
+        ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
                 /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
                 p' | tac)
         if [ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ]

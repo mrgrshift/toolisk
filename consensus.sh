@@ -2,18 +2,18 @@
 source configtoolisk.sh
 
 
-echo "Start consensus watcher" > $CONSENSUS_LOG
+echo "Start process.. Looking for Inadequate broadhash" > $CONSENSUS_LOG
 while true; do
    TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
-   LASTLINE=$(tail ~/lisk-main/logs/lisk.log -n 2| grep 'Inadequate')
+   LASTLINE=$(tail logs/lisk.log -n 2| grep 'Inadequate')
    if [ -n "$LASTLINE" ]
         then
                 echo "Inadequate broadhash $TIME"
                 echo "Inadequate broadhash $TIME" >> $CONSENSUS_LOG
 
                 echo "$LASTLINE" >> $CONSENSUS_LOG
+		RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE >> $CONSENSUS_LOG
-                RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 echo $RESPONSE | grep "true" > /dev/null
                 if [ $? = 0 ]; then
                    echo -e "${GREEN}Forging enabled successfully in remote server${OFF}"
@@ -30,11 +30,15 @@ while true; do
 
             echo
             echo "Switching to Server $IP_SERVER to try and forge"
-	    bash ~/lisk-main/lisk.sh reload
-            sleep 60
+	    bash lisk.sh reload
+            sleep 20
         fi
-    LASTLINE=$(tail ~/lisk-main/logs/lisk.log -n 2| grep 'consensus')
-    echo "Last time consensus checked: $TIME - $LASTLINE"
+
+	ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
+                /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
+                p' | tac)
+    echo "Last time consensus checked: $TIME - $ACTUAL_BROADHASH_CONSENSUS %"
+    echo "Last time consensus checked: $TIME - $ACTUAL_BROADHASH_CONSENSUS %" >> $CONSENSUS_LOG
     sleep 10
 done
 

@@ -106,12 +106,17 @@ echo "URL_REMOTE=\"$HTTP://$IP_SERVER:$PORT/api/delegates/forging/enable\" #URL 
 echo "URL_REMOTE_DISABLE=\"$HTTP://$IP_SERVER:$PORT/api/delegates/forging/disable\"" >> $init
 echo "URL_LOCAL=\"$HTTP://127.0.0.1:$PORT/api/delegates/forging/enable\"" >> $init
 echo "URL_LOCAL_DISABLE=\"$HTTP://127.0.0.1:$PORT/api/delegates/forging/disable\"" >> $init
-echo "BLOCKHEIGHT_LOG=~/toolisk/blockheight.log" >> $init
-echo "CONSENSUS_LOG=~/toolisk/consensus.log" >> $init
+echo "BLOCKHEIGHT_LOG=~/toolisk/logs/blockheight.log" >> $init
+echo "CONSENSUS_LOG=~/toolisk/logs/consensus.log" >> $init
+echo "MANAGER_LOG=~/toolisk/logs/manager.log" >> $init
 echo "USERTOOL=\"$USER\"" >> $init
+echo "cd /home/$USER/lisk-main/" >> $init
 
 chmod u+x blockheight.sh
 chmod u+x consensus.sh
+chmod u+x manager.sh
+
+mkdir -p logs/
 
 echo " "
 echo -e "${CYAN}ALL VARIABLES SET${OFF}"

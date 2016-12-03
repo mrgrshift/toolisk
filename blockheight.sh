@@ -7,7 +7,6 @@ source configtoolisk.sh
 HEIGHT=1	#Highest height
 CHECKSRV=1	#Local height
 SRV="127.0.0.1:8000"
-cd /home/$USERTOOL/lisk-main/
 
 top_height(){
 	## Get height of your 100 peers and save the highest value
@@ -40,6 +39,12 @@ get_local_height(){
                 echo $SRV " " "is off?"
                 CHECKSRV="0"
             fi
+}
+
+get_broadhash(){
+	ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
+                /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
+                p' | tac)
 }
 
 ## Thanks to cc001 and hagie for improvements here
@@ -116,9 +121,10 @@ post_rebuild(){
                 echo "Rebuild ended.." >> $BLOCKHEIGHT_LOG
 		top_height
 		get_local_height
+		get_broadhash
 
-                MG_SUBJECT="$DELEGATE_NAME synchronization ended Highest: $HEIGHT - Local: $CHECKSRV"
-                MG_TEXT="$DELEGATE_NAME synchronization ended Highest: $HEIGHT - rebuild: $CHECKSRV"
+                MG_SUBJECT="$DELEGATE_NAME synchronization ended Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
+                MG_TEXT="$DELEGATE_NAME synchronization ended Highest: $HEIGHT - rebuild: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 }
 
@@ -146,9 +152,8 @@ start_reload(){
 	TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
 	echo "Starting reload at $TIME"
 
-
         bash lisk.sh reload
-        sleep 60
+        sleep 20
         echo "Reload finished"
 }
 
@@ -177,14 +182,14 @@ found_fork_alert(){
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
 	bash lisk.sh reload
-	sleep 60
+	sleep 20
 }
 
 local_height() {
     ## Get height of this server and see if it's greater or within 4 of the highest
 	get_local_height
 
-	is_forked=`tail /home/$USERTOOL/lisk-main/logs/lisk.log -n 20 | grep "Fork"`
+	is_forked=`tail logs/lisk.log -n 20 | grep "Fork"`
 	if [ -n "$is_forked" ]
 	then
 		echo "Found fork: $is_forked"
@@ -192,13 +197,13 @@ local_height() {
 	fi
 
         diff=$(( $HEIGHT - $CHECKSRV ))
-        if [ "$diff" -gt "4" ]
+        if [ "$diff" -gt "3" ]
         then
 		start_reload
 		get_local_height
                 diff=$(( $HEIGHT - $CHECKSRV ))
                 ## Rebuild if still out of sync after reload
-                if [ "$diff" -gt "5" ]
+                if [ "$diff" -gt "4" ]
                 then
                         rebuild_alert
                         echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV"
@@ -223,8 +228,9 @@ while true; do
 		echo "Waiting for rebuild.. $TIME"
 	fi
 
-        echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV -- $TIME"
-        echo "Highest: $HEIGHT -- Local: $CHECKSRV -- $TIME" >> $BLOCKHEIGHT_LOG
+	get_broadhash
+        echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) -- $TIME"
+        echo "Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) -- $TIME" >> $BLOCKHEIGHT_LOG
         sleep 10
 done
 

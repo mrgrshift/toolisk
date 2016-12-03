@@ -4,7 +4,8 @@ First make sure you do not have your SECRET set up in the lisk configuration (co
 
 #Installation
 `bash install.sh` <br>
-It will ask you for mailgun account to handle your notifications. After you install you will have the choose to run 2 scripts:<br>
+It will ask you for mailgun account to handle your notifications.<br>
+After you install it you con run the following scripts:<br>
 <br>
 `bash blockheight.sh` This script will watch and compare your blockheight against top height.<br>
 <br>

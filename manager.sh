@@ -81,17 +81,10 @@ while true; do
                 BAD_CONSENSUS="0"
         fi
 
-        if [ "$BAD_CONSENSUS" -gt "4" ]
-        then
-                echo "lisk.sh reload"
-                bash lisk.sh reload
-                sleep 10
-        fi
-
         forgning=""
         diff=$(( $HEIGHT - $LOCAL_HEIGHT ))
         diff2=$(( $HEIGHT - $REMOTE_HEIGHT ))
-        if [ "$diff" -gt "$diff2" ]  #accurate: && [ "$ACTUAL_BROADHASH_CONSENSUS" -gt "51" ]
+        if [ "$diff" -gt "$diff2" ] && [ "$ACTUAL_BROADHASH_CONSENSUS" -gt "51" ]
         then
                 #enable remote forging
                 echo "Enable remote forging" >> $MANAGER_LOG
@@ -109,6 +102,14 @@ while true; do
                 echo "Disable remote forging" >> $MANAGER_LOG
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
         fi
+
+        if [ "$BAD_CONSENSUS" -eq "4" ]
+        then
+                echo "lisk.sh reload"
+                bash lisk.sh reload
+                sleep 10
+        fi
+
         TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
 
         echo " "

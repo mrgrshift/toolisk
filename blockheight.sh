@@ -27,6 +27,21 @@ top_height(){
             fi
 }
 
+get_remote_height(){
+        REMOTE_HEIGHT=`curl -s "http://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+        while [ -z "$REMOTE_HEIGHT" ]
+        do
+                sleep 1
+                REMOTE_HEIGHT=`curl -s "http://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+        done
+
+        if ! [[ "$REMOTE_HEIGHT" =~ ^[0-9]+$ ]];
+            then
+                echo "$IP_SERVER is off?"
+                REMOTE_HEIGHT="0"
+            fi
+}
+
 get_local_height(){
 	CHECKSRV=`curl -s "http://$SRV/api/loader/status/sync"| jq '.height'`
 	while [ -z "$CHECKSRV" ]
@@ -232,7 +247,9 @@ local_height() {
                 BAD_CONSENSUS="0"
         fi
 
-        if [ "$BAD_CONSENSUS" -eq "5" ]
+	get_remote_height
+	diff=$(( $HEIGHT - $REMOTE_HEIGHT ))
+        if [ "$BAD_CONSENSUS" -eq "10" ] && [ "$diff" -lt "4" ]
         then
 		#If the low consensus is repeated many times make rebuild
                 rebuild_alert

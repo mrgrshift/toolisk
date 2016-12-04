@@ -150,10 +150,10 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
                            echo "echo \"exit 0\" >>  /etc/init.d/custom_shutdown | sudo tee -a /etc/init.d/custom_shutdown > /dev/null" >> temp.sh
                                 sudo bash temp.sh
                                 rm temp.sh
-                                sudo chmod a+x /etc/init.d/custom_shutdown > logs/install.log
-                                sudo ln -sf /etc/init.d/custom_shutdown /etc/rc0.d/K04custom_shutdown >> logs/install.log
-                                sudo ln -sf /etc/init.d/custom_shutdown /etc/rc6.d/K04custom_shutdown >> logs/install.log
-                                sudo chmod a+x /etc/rc0.d/K04custom_shutdown /etc/rc6.d/K04custom_shutdown >> logs/install.log
+                                sudo chmod a+x /etc/init.d/custom_shutdown > logs/install.log > /dev/null
+                                sudo ln -sf /etc/init.d/custom_shutdown /etc/rc0.d/K04custom_shutdown >> logs/install.log > /dev/null
+                                sudo ln -sf /etc/init.d/custom_shutdown /etc/rc6.d/K04custom_shutdown >> logs/install.log > /dev/null
+                                sudo chmod a+x /etc/rc0.d/K04custom_shutdown /etc/rc6.d/K04custom_shutdown >> logs/install.log > /dev/null
 
                            echo -n "Configuring... "
 			   #reboot.sh
@@ -168,14 +168,15 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
 			   echo "#!/bin/bash" > startup.sh
 			   echo "export HOME=/home/$USER/lisk-main/" >> startup.sh
 			   echo "cd /home/$USER/lisk-main/" >> startup.sh
-			   echo "bash /home/$USER/lisk-main/lisk.sh reload >> /home/$USER/toolisk/startup.log" >> startup.sh
+			   echo "echo \"Starting lisk.sh reload\" >> /home/$USER/toolisk/logs/startup.log" >> startup.sh
+			   echo "bash /home/$USER/lisk-main/lisk.sh reload >> /home/$USER/toolisk/logs/startup.log" >> startup.sh
 				sudo chmod u+x startup.sh
 			   echo "#!/bin/bash" > temp.sh
                            echo "sudo rm /etc/rc.local" >> temp.sh
 			   echo "echo \"#!/bin/sh -e\" > /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
-			   echo "echo \"/bin/su $USER -c \\\"cd $(pwd); /usr/bin/screen -dmS startup_lisk bash -c $(pwd)/startup.sh'; exec bash'\\\" > $(pwd)/startup.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
+			   echo "echo \"/bin/su $USER -c \\\"cd $(pwd); /usr/bin/screen -dmS startup_lisk bash -c $(pwd)/startup.sh'; exec bash'\\\" > $(pwd)/logs/startup.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 			   echo "sleep 10" >> temp.sh
-                           echo "echo \"/bin/su $USER -c \\\"cd $(pwd); bash -c $(pwd)/startTool.sh'; exec bash'\\\" >> $(pwd)/startTool.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
+                           echo "echo \"/bin/su $USER -c \\\"cd $(pwd); bash -c $(pwd)/startTool.sh'; exec bash'\\\" > $(pwd)/logs/startTool.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 			   echo "echo \"exit 0\" >> /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 				sudo bash temp.sh
 			   echo -e "done.";

@@ -142,7 +142,7 @@ post_rebuild(){
 check_if_rebuild_finish(){
 	while true; do
 		s1=`curl -k -s "http://127.0.0.1:8000/api/loader/status/sync"| jq '.height'`
-		sleep 60
+		sleep 30
 		s2=`curl -k -s "http://127.0.0.1:8000/api/loader/status/sync"| jq '.height'`
 
 		diff=$(( $s2 - $s1 ))

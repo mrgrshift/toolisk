@@ -147,7 +147,7 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
                            #custom_shutdown
                            echo "echo \"#!/bin/sh -e\" >  /etc/init.d/custom_shutdown | sudo tee -a /etc/init.d/custom_shutdown > /dev/null" > temp.sh
                            echo "echo \"cd $(pwd)\" >>  /etc/init.d/custom_shutdown | sudo tee -a /etc/init.d/custom_shutdown > /dev/null" >> temp.sh
-		           echo "echo \"bash $(pwd)/reboot.sh >> $(pwd)/reboot.log\" >>  /etc/init.d/custom_shutdown | sudo tee -a /etc/init.d/custom_shutdown > /dev/null" >> temp.sh
+		           echo "echo \"bash $(pwd)/reboot.sh >> $(pwd)/logs/reboot.log\" >>  /etc/init.d/custom_shutdown | sudo tee -a /etc/init.d/custom_shutdown > /dev/null" >> temp.sh
                            echo "echo \"exit 0\" >>  /etc/init.d/custom_shutdown | sudo tee -a /etc/init.d/custom_shutdown > /dev/null" >> temp.sh
                                 sudo bash temp.sh
                                 rm temp.sh
@@ -205,13 +205,13 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
 				echo "echo \" WantedBy=multi-user.target\" >> /etc/systemd/system/rc-local.service | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 				sudo bash temp.sh
 				sudo chmod +x /etc/rc.local
-				sudo systemctl enable rc-local >> logs/install.log
-				sudo systemctl start rc-local.service >> logs/install.log
+				sudo systemctl enable rc-local >> logs/install.log > /dev/null
+				sudo systemctl start rc-local.service >> logs/install.log > /dev/null
 				#enabling postgres at startup
-				echo "Enabling postgres at startup" >> logs/install.log
-				sudo systemctl enable postgresql >> logs/install.log
-				sudo update-rc.d postgresql enable >> logs/install.log
-				sudo service postgresql start >> logs/install.log
+				echo "Enabling postgres at startup" >> logs/install.log > /dev/null
+				sudo systemctl enable postgresql >> logs/install.log > /dev/null
+				sudo update-rc.d postgresql enable >> logs/install.log > /dev/null
+				sudo service postgresql start >> logs/install.log > /dev/null
 				echo "done"
 				rm temp.sh
 			fi

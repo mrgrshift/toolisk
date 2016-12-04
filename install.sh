@@ -169,7 +169,7 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
 			   echo "#!/bin/bash" > startup.sh
 			   echo "export HOME=/home/$USER/lisk-main/" >> startup.sh
 			   echo "cd /home/$USER/lisk-main/" >> startup.sh
-			   echo "echo \"Starting lisk.sh reload\" >> /home/$USER/toolisk/logs/startup.log" >> startup.sh
+			   echo "echo \"Starting lisk.sh reload\" > /home/$USER/toolisk/logs/startup.log" >> startup.sh
 			   echo "bash /home/$USER/lisk-main/lisk.sh reload >> /home/$USER/toolisk/logs/startup.log" >> startup.sh
 				sudo chmod u+x startup.sh
 			   echo "#!/bin/bash" > temp.sh

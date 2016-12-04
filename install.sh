@@ -129,6 +129,7 @@ echo " "
 
 
 #REBOOT DETECT/STARTUP SCRIPT
+echo
 echo "=============================================================="
 echo "Anti-Reboot configuration"
 echo "=============================================================="

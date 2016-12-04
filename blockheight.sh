@@ -147,6 +147,7 @@ post_rebuild(){
 		top_height
 		get_local_height
 		get_broadhash
+		BAD_CONSENSUS="0"
 
                 MG_SUBJECT="$DELEGATE_NAME rebuild synchronization ended Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
                 MG_TEXT="$DELEGATE_NAME rebuild synchronization ended Highest: $HEIGHT - rebuild: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"

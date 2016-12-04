@@ -117,6 +117,7 @@ echo "cd /home/$USER/lisk-main/" >> $init
 chmod u+x blockheight.sh
 chmod u+x consensus.sh
 chmod u+x manager.sh
+chmod u+x startTool.sh
 
 mkdir -p logs/
 
@@ -174,9 +175,9 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
 			   echo "#!/bin/bash" > temp.sh
                            echo "sudo rm /etc/rc.local" >> temp.sh
 			   echo "echo \"#!/bin/sh -e\" > /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
-			   echo "echo \"/bin/su $USER -c \\\"cd $(pwd); /usr/bin/screen -dmS startup_lisk bash -c $(pwd)/startup.sh'; exec bash'\\\" > $(pwd)/logs/startup.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
-			   echo "sleep 10" >> temp.sh
-                           echo "echo \"/bin/su $USER -c \\\"cd $(pwd); bash -c $(pwd)/startTool.sh'; exec bash'\\\" > $(pwd)/logs/startTool.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
+			   echo "echo \"/bin/su $USER -c \\\"cd $(pwd); /usr/bin/screen -dmS startup_lisk bash -c $(pwd)/startup.sh'; exec bash'\\\" > $(pwd)/logs/rc.log.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
+			   echo "echo \"sleep 10\" >> /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
+                           echo "echo \"/bin/su $USER -c \\\"cd $(pwd); bash -c $(pwd)/startTool.sh'; exec bash'\\\" > $(pwd)/logs/rc.local.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 			   echo "echo \"exit 0\" >> /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 				sudo bash temp.sh
 			   echo -e "done.";

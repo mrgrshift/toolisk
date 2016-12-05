@@ -204,14 +204,9 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
 				echo "echo \"[Install]\" >> /etc/systemd/system/rc-local.service | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 				echo "echo \" WantedBy=multi-user.target\" >> /etc/systemd/system/rc-local.service | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 				sudo bash temp.sh
-				sudo chmod +x /etc/rc.local
-				sudo systemctl enable rc-local >> logs/install.log > /dev/null
-				sudo systemctl start rc-local.service >> logs/install.log > /dev/null
-				#enabling postgres at startup
-				echo "Enabling postgres at startup" >> logs/install.log > /dev/null
-				sudo systemctl enable postgresql >> logs/install.log > /dev/null
-				sudo update-rc.d postgresql enable >> logs/install.log > /dev/null
-				sudo service postgresql start >> logs/install.log > /dev/null
+				sudo chmod +x /etc/rc.local 2>&1
+				sudo systemctl enable rc-local >> logs/install.log > /dev/null 2>&1
+				sudo systemctl start rc-local.service >> logs/install.log > /dev/null 2>&1
 				echo "done"
 				rm temp.sh
 			fi

@@ -3,7 +3,14 @@
 First make sure you do not have your SECRET set up in the lisk configuration (config.json).<br>
 
 #Installation
-`bash install.sh` <br>
+Execute the following commands on your delegate node server:
+```
+cd ~/
+git clone https://github.com/mrgrshift/toolisk
+cd toolisk/
+bash install.sh
+```
+<br>
 It will ask you for mailgun account to handle your notifications.<br>
 After you install it you con run the following scripts:<br>
 `bash startTool.sh` Will automaticly start 'screen' sessions to run blockheight.sh and consensus.sh scripts.<br>

@@ -96,7 +96,7 @@ counter_check="0"
 check_github_updates(){
     ((counter_check+=1))
     if [ "$counter_check" -gt "10000" ]; then  #Verification period = 10000 every 7s =~19Hours. every 10s =~27Hours
-        need_update=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "false" || echo "true"
+        need_update=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "false" || echo "true")
         if [ "$need_update" = "true" ]
         then
             MG_SUBJECT="There's new version of toolisk"

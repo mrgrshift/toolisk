@@ -139,6 +139,7 @@ echo -e "Is important to keep ${CYAN}node app.js${OFF} running, that is why we n
 echo "This script will send you an email alert when reboot is detected. And will start lisk at your system startup."
 echo -e "Before proceeding, be sure to read the information located here: ${CYAN}https://github.com/mrgrshift/restart-script${OFF}"
 echo "The following configuration will change your rc.local and create K04custom_shutdown script."
+echo "If you are not sure about this please avoid the next question an press 'n'."
 echo " "
 read -p "Do you want to proceed (y/n)?" -n 1 -r
         if [[  $REPLY =~ ^[Yy]$ ]]

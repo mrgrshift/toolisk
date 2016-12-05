@@ -3,6 +3,7 @@
 #This script will control forging status
 source configtoolisk.sh
 
+
 SRV_REMOTE="$IP_SERVER:$PORT"  # ip or host if set in /etc/hosts
 SRV="127.0.0.1:8000"
 LOCAL_HEIGHT="0"
@@ -21,6 +22,7 @@ top_height(){
         done
 }
 
+
 get_own_height(){
         LOCAL_HEIGHT=$(curl -s http://$SRV/api/loader/status/sync | jq '.height')
         while [ -z "$LOCAL_HEIGHT" ]
@@ -30,10 +32,18 @@ get_own_height(){
         done
 
         REMOTE_HEIGHT=$(curl -s http://$SRV_REMOTE/api/loader/status/sync | jq '.height')
+	local_count="0"
         while [ -z "$REMOTE_HEIGHT" ]
         do
                 sleep 1
                 REMOTE_HEIGHT=$(curl -s http://$SRV_REMOTE/api/loader/status/sync | jq '.height')
+		((local_count+=1))
+		if [ "$local_count" -gt "5" ]; then
+			#If after 5 seconds the remote server does not respond
+			echo "Remote server not responding"
+			REMOTE_HEIGHT="0"
+			break
+		fi
         done
 }
 
@@ -65,6 +75,7 @@ validate_heights(){
     fi
 }
 
+
 get_broadhash(){
     ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
                 /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
@@ -80,6 +91,22 @@ get_broadhash(){
             ACTUAL_BROADHASH_CONSENSUS="0"
     fi
 }
+
+counter_check="0"
+check_github_updates(){
+    ((counter_check+=1))
+    if [ "$counter_check" -gt "10000" ]; then  #Verification period = 10000 every 7s =~19Hours. every 10s =~27Hours
+        need_update=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "false" || echo "true"
+        if [ "$need_update" = "true" ]
+        then
+            MG_SUBJECT="There's new version of toolisk"
+            MG_TEXT="Please update toolisk tool with the following commands:"$'\r\n'"cd ~/toolisk/"$'\r\n'"git checkout ."$'\r\n'"git pull"
+            curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
+	    counter_check="0"
+        fi
+    fi
+}
+
 
 while true; do
         top_height
@@ -98,7 +125,7 @@ while true; do
 	TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
         diff=$(( $HEIGHT - $LOCAL_HEIGHT ))
         diff2=$(( $HEIGHT - $REMOTE_HEIGHT ))
-        if [ "$diff" -gt "$diff2" ] && [ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ]
+        if [ "$diff" -gt "$diff2" ] || ([ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ] && [ "$diff2" -lt "4" ])
         then
                 #enable remote forging
                 echo "$TIME Enable remote forging -- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
@@ -119,7 +146,7 @@ while true; do
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
         fi
 
-        if [ "$BAD_CONSENSUS" -eq "3" ]
+        if [ "$BAD_CONSENSUS" -eq "3" ] && [ "$diff" -lt "4" ]
         then
                 echo "lisk.sh reload"
                 bash lisk.sh reload
@@ -129,6 +156,7 @@ while true; do
         TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
 
         echo " "
+	echo "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging" >> $MANAGER_LOG
         sleep 7

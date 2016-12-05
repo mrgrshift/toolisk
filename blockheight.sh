@@ -28,11 +28,21 @@ top_height(){
 }
 
 get_remote_height(){
+  if ! [ -z "$IP_SERVER" ]
+  then
         REMOTE_HEIGHT=`curl -s "http://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+	local_count="0"
         while [ -z "$REMOTE_HEIGHT" ]
         do
                 sleep 1
                 REMOTE_HEIGHT=`curl -s "http://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+                ((local_count+=1))
+                if [ "$local_count" -gt "5" ]; then
+                        #If after 5 seconds the remote server does not respond
+                        echo "Remote server not responding"
+                        REMOTE_HEIGHT="0"
+                        break
+                fi
         done
 
         if ! [[ "$REMOTE_HEIGHT" =~ ^[0-9]+$ ]];
@@ -40,6 +50,9 @@ get_remote_height(){
                 echo "$IP_SERVER is off?"
                 REMOTE_HEIGHT="0"
             fi
+   else
+        REMOTE_HEIGHT="0"
+   fi
 }
 
 get_local_height(){
@@ -250,9 +263,9 @@ local_height() {
 
 	get_remote_height
 	diff=$(( $HEIGHT - $REMOTE_HEIGHT ))
-        if [ "$BAD_CONSENSUS" -eq "10" ] && [ "$diff" -lt "4" ]
+        if [ "$BAD_CONSENSUS" -gt "15" ] && [ "$diff" -lt "4" ]
         then
-		#If the low consensus is repeated many times make rebuild
+		#If the low consensus is repeated many times make rebuild as long as remote server is not rebuilding
                 rebuild_alert
                 echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"
                 #bash lisk.sh rebuild

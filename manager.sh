@@ -95,7 +95,7 @@ get_broadhash(){
 counter_check="0"
 check_github_updates(){
     ((counter_check+=1))
-    if [ "$counter_check" -gt "10000" ]; then  #Verification period = 10000 every 7s =~19Hours. every 10s =~27Hours
+    if [ "$counter_check" -gt "1" ]; then  #Verification period = 10000 every 7s =~19Hours. every 10s =~27Hours
         need_update=$([ $(git rev-parse HEAD) = $(git ls-remote $(git rev-parse --abbrev-ref @{u} | sed 's/\// /g') | cut -f1) ] && echo "false" || echo "true")
         if [ "$need_update" = "true" ]
         then
@@ -159,7 +159,7 @@ while true; do
 	echo "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging" >> $MANAGER_LOG
-	check_github_updates
+#	check_github_updates
         sleep 7
 done
 

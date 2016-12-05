@@ -159,6 +159,7 @@ while true; do
 	echo "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging" >> $MANAGER_LOG
+	check_github_updates
         sleep 7
 done
 

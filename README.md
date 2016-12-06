@@ -1,5 +1,6 @@
 # toolisk
 
+This script works for 1 and 2 servers. But preferably it is recommended to have 2 servers minimum.<br>
 First make sure you do not have your SECRET set up in the lisk configuration (config.json).<br>
 
 #Requisites
@@ -18,17 +19,29 @@ git clone https://github.com/mrgrshift/toolisk
 cd toolisk/
 bash install.sh
 ```
+install.sh will ask you for everything it needs from you to start to operate.<br>
+Also it will ask you for mailgun account to handle your notifications.<br>
+
+#Localsnapshots
+In order to reduce the time for downloading snapshots, this script will be looking for new versions and will download them in a separate process. This is the first process after install.sh you need to run:<br>
+`bash localsnapshots.sh`
 <br>
-It will ask you for mailgun account to handle your notifications.<br>
-After you install it you con run the following scripts:<br>
+#Scripts
+After you install it you can run the following scripts:<br>
+###startTool.sh
 `bash startTool.sh` Will automaticly start 'screen' sessions to run blockheight.sh and consensus.sh scripts.<br>
+If you don't like 'screen' sessions you can use the tool of your choice.<br>
 <br>
+###blockheight.sh
 `bash blockheight.sh` This script will watch and compare your blockheight against top height.<br>
 <br>
+###consensus.sh
 `bash consensus.sh` This script will watch for your consensus, if its Inadequate it will automatically do failover.<br>
 <br>
+#Your Manager
 `bash manager.sh` Use this script only in one of your servers. This script will control forging status.<br>
+This is very important, do not run manager.sh in two separate servers because you will be ending forging in two servers and will be bad for your delegate.
 <br>
-
+<br>
 ###Disclaimer
 Use at your own risk. Read the code and if it suits your needs you can use it.

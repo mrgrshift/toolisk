@@ -1,34 +1,46 @@
 #!/bin/bash
 #Use this script only in one of your servers.
 #This script will control forging status
+
+#Please vote for mrgr delegate!
+
 source configtoolisk.sh
 
 
-SRV_REMOTE="$IP_SERVER:$PORT"  # ip or host if set in /etc/hosts
-SRV="127.0.0.1:8000"
+SRV_REMOTE="$IP_SERVER:$PORT"
+LOCALHOST="127.0.0.1:$LOCAL_PORT"
 LOCAL_HEIGHT="0"
 REMOTE_HEIGHT="0"
 BAD_CONSENSUS="0"
 
 top_height(){
+  STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+   if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then
         ## Get height of your 100 peers and save the highest value
         ## Thanks to wannabe_RoteBaron for this improvement
-        HEIGHT=$(curl -s http://$SRV/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+        HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
         ## Make sure height is not empty, if it is empty try the call until it is not empty
         while [ -z "$HEIGHT" ]
         do
            sleep 1
-           HEIGHT=$(curl -s http://$SRV/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+           HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
         done
+     fi
+   else
+        echo -e "${RED}Your localhost is not responding${OFF}"
+        echo "waiting.."
+        sleep 15
+   fi
 }
 
 
 get_own_height(){
-        LOCAL_HEIGHT=$(curl -s http://$SRV/api/loader/status/sync | jq '.height')
+        LOCAL_HEIGHT=$(curl -s http://$LOCALHOST/api/loader/status/sync | jq '.height')
         while [ -z "$LOCAL_HEIGHT" ]
         do
                 sleep 1
-                LOCAL_HEIGHT=$(curl -s http://$SRV/api/loader/status/sync | jq '.height')
+                LOCAL_HEIGHT=$(curl -s http://$LOCALHOST/api/loader/status/sync | jq '.height')
         done
 
         REMOTE_HEIGHT=$(curl -s http://$SRV_REMOTE/api/loader/status/sync | jq '.height')
@@ -123,6 +135,7 @@ while true; do
 
         forgning=""
 	TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
+   if ! [ -z "$IP_SERVER" ]; then
         diff=$(( $HEIGHT - $LOCAL_HEIGHT ))
         diff2=$(( $HEIGHT - $REMOTE_HEIGHT ))
         if [ "$diff" -gt "$diff2" ] || ([ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ] && [ "$diff2" -lt "4" ])
@@ -145,6 +158,15 @@ while true; do
                 echo "$TIME Disable remote forging" >> $MANAGER_LOG
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
         fi
+   else
+        #enable local forging
+        echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
+        RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL)
+        echo $RESPONSE >> $MANAGER_LOG
+        forging="local"
+        echo -e "${YELLOW}Reminder --- Install another server for backup${OFF}"
+   fi
+
 
         if [ "$BAD_CONSENSUS" -eq "3" ] && [ "$diff" -lt "4" ]
         then

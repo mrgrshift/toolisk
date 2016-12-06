@@ -19,6 +19,12 @@ ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " 
 }
 
 echo "Start process.. Looking for Inadequate broadhash" > $CONSENSUS_LOG
+if [ -z "$IP_SERVER" ]; then
+	echo "Process ended due to there is no backup"
+        echo "Process ended due to there is no backup" >> $CONSENSUS_LOG
+	exit 0
+fi
+
 while true; do
    TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
    LASTLINE=$(tail logs/lisk.log -n 2| grep 'Inadequate')
@@ -47,7 +53,7 @@ while true; do
             echo
             echo "Switching to Server $IP_SERVER to try and forge"
 	    bash lisk.sh reload
-            sleep 20
+            sleep 10
         fi
 
 	get_broadhash

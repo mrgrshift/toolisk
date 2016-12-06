@@ -1,15 +1,18 @@
 #!/bin/bash
-#The majority of the code is from MrV's repo, thank you, you can take a look here: https://github.com/mrv777/LiskScripts/blob/master/check_height_and_rebuild.sh
-
+#If you are not good with this scripts
+#Please take a look at this other awesome scripts: https://github.com/mrv777/LiskScripts
 
 source configtoolisk.sh
 
 HEIGHT=1	#Highest height
 CHECKSRV=1	#Local height
 BAD_CONSENSUS="0"
-SRV="127.0.0.1:8000"
+SRV="127.0.0.1:$LOCAL_PORT"
 
 top_height(){
+   STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$SRV/api/peers" | grep "HTTP" | cut -f2 -d" ")
+   if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then
 	## Get height of your 100 peers and save the highest value
 	## Thanks to wannabe_RoteBaron for this improvement
 	HEIGHT=$(curl -s http://$SRV/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
@@ -25,6 +28,11 @@ top_height(){
                 echo "$SERVER_NAME is off?"
                 HEIGHT="0"
             fi
+   else
+        echo -e "${RED}Your localhost is not responding.${OFF}"
+        echo "Waiting.."
+        sleep 15
+   fi
 }
 
 get_remote_height(){
@@ -75,29 +83,28 @@ get_broadhash(){
                 /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
                 p' | tac)
 
-    if ! [ -z "$ACTUAL_BROADHASH_CONSENSUS" ]
-    then
-    if ! [[ "$ACTUAL_BROADHASH_CONSENSUS" =~ ^[0-9]+$ ]];
-        then
+    if ! [ -z "$ACTUAL_BROADHASH_CONSENSUS" ]; then
+      if ! [[ "$ACTUAL_BROADHASH_CONSENSUS" =~ ^[0-9]+$ ]]; then
             ACTUAL_BROADHASH_CONSENSUS="0"
-        fi
+      fi
     else
             ACTUAL_BROADHASH_CONSENSUS="0"
     fi
 }
 
-## Thanks to cc001 and hagie for improvements here
 find_newest_snap_rebuild(){
-
+   #Add local snapshots availability
+   LOCAL_FILE=$(ls -S "$LOCAL_SNAPSHOTS" | head -1)
+   if [ -z "$LOCAL_FILE"  ]; then
 	SNAPSHOTS=(
-	  https://downloads.lisk.io/lisk/main/blockchain.db.gz	## Official
+	  https://downloads.lisk.io/lisk/main/blockchain.db.gz		## Official
 	  https://snapshot.liskwallet.net/blockchain.db.gz		## isabella
 	  https://snapshot.lisknode.io/blockchain.db.gz			## Gr33nDrag0n
 	  https://lisktools.io/backups/blockchain.db.gz			## MrV
 	  https://snapshot.punkrock.me/blockchain.db.gz			## punkrock
 	  https://snapshot.lsknode.org/blockchain.db.gz			## redsn0w
 	)
-
+	## Thanks to cc001 and hagie for improvements here
 	BESTSNAP=""
 	BESTTIMESTAMP=0
 	BESTSNAPLENGTH=0
@@ -122,16 +129,19 @@ find_newest_snap_rebuild(){
 	   fi
 	done
 
-    REPO=${BESTSNAP%/blockchain.db.gz}
-	echo "Newest snap: $BESTSNAP | Rebuilding from $REPO"
+	    REPO=${BESTSNAP%/blockchain.db.gz}
+		echo "Newest snap: $BESTSNAP | Rebuilding from $REPO"
 
-    ## bash lisk.sh stop ## Trying to figure out why rebuilding from block 0.  Attempting to stop first to make sure the DB shuts down too
-    ## sleep 5
-    bash lisk.sh rebuild -u $REPO
+	    bash lisk.sh rebuild -u $REPO
+   else
+	echo "Start to rebuild from local snapshot $LOCAL_SNAPSHOTS/$LOCAL_FILE"
+	bash lisk.sh rebuild -l "$LOCAL_SNAPSHOTS/$LOCAL_FILE"
+   fi
 }
 
 rebuild_alert(){
                 TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
+	  if ! [ -z "$IP_SERVER" ]; then
                 #failover script
                 RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE
@@ -150,7 +160,11 @@ rebuild_alert(){
 
                 echo "Starting rebuild at $TIME"
                 echo "Starting rebuild at $TIME" >> $BLOCKHEIGHT_LOG
-                curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
+	  else
+	        MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started -- Your delegate is not forging now"
+	        MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started "$'\r\n'"Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging not enabled because there's no backup node installed"
+	  fi
+      curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 }
 
 
@@ -170,9 +184,9 @@ post_rebuild(){
 ## Thank you corsaro for this improvement
 check_if_rebuild_finish(){
 	while true; do
-		s1=`curl -k -s "http://127.0.0.1:8000/api/loader/status/sync"| jq '.height'`
+		s1=`curl -k -s "http://$SRV/api/loader/status/sync"| jq '.height'`
 		sleep 30
-		s2=`curl -k -s "http://127.0.0.1:8000/api/loader/status/sync"| jq '.height'`
+		s2=`curl -k -s "http://$SRV/api/loader/status/sync"| jq '.height'`
 
 		diff=$(( $s2 - $s1 ))
 		if [ "$diff" -gt "10" ]
@@ -201,6 +215,7 @@ found_fork_alert(){
 	echo "Found fork: $FORK" >> $BLOCKHEIGHT_LOG
         TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
         echo "Starting reload at $TIME"
+          if ! [ -z "$IP_SERVER" ]; then
                 #failover script
                 RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE
@@ -219,6 +234,7 @@ found_fork_alert(){
                 fi
 
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
+	   fi
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
 	bash lisk.sh reload
 	sleep 10

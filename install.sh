@@ -23,6 +23,25 @@ echo "----------------------------------------"
 echo "We need to configure some variables."
 echo " "
 
+if [ -f "$1" ]; then
+	case $1 in
+	"main")
+		echo "You are installing this script for mainnet"
+		VERSION="lisk-main"
+	;;
+	"test")
+		echo "You are installing this script for testnet"
+		VERSION="lisk-test"
+	;;
+	esac
+else
+	echo "You are installing this script for mainnet"
+	echo "If you want to change this script to testnet please stop this installation and start again with:"
+	echo "bash install.sh test"
+	VERSION="lisk-test"
+fi
+
+
 if [ -f "configtoolisk.sh" ]; then
 	read -p "**A previous installation was detected, do you want to proceed anyway (y/n)?" -n 1 -r
 	if [[  $REPLY =~ ^[Nn]$ ]]
@@ -45,33 +64,49 @@ echo -n "API Base URL: "
 echo -n "Email to: "
 	read MG_TO
 
+
         read -p "Is this information correct (y/n)?" -n 1 -r
         if [[  $REPLY =~ ^[Yy]$ ]]
            then
                 echo " "
-		echo -e "Email information set. Alerts will sent to: $MG_TO"
+                echo -e "Email information set. Alerts will sent to: $MG_TO"
            else
                 echo " "
-		echo "Please run the installer again"
+                echo "Please run the installer again"
+                exit 1
+           fi
+
+        read -p "How many servers are you using (1 or 2)?" -n 1 -r
+        if [[  $REPLY =~ ^[12]$ ]]
+           then
+                echo " "
+		if [ "$REPLY" -eq "2" ]; then
+ 		   echo "Now we are going to configure the failover settings."
+		   echo "Please enter the folling information (of your backup server): "
+		   echo -n "IP: "
+		        read IP_SERVER
+		   echo -n "Port: "
+		        read PORT
+
+		   HTTP="0"
+		   read -p "Is https enabled (y/n)?" -n 1 -r
+		        if [[  $REPLY =~ ^[Yy]$ ]]
+		           then
+		                HTTP="https"
+		           else
+        	        	HTTP="http"
+	           	fi
+		else
+		   echo -e "${YELLOW}WARNING!${OFF} This scripts works better with 2 servers. You can continue installing it and this script will do his best for you with one server"
+		fi
+
+           else
+                echo " "
+		echo "Please run the installer again and select only the numer 1 or numer 2"
 		exit 1
            fi
-
-echo " "
-echo "Now we are going to configure the failover settings."
-echo "Please enter the folling information (of your backup server): "
-echo -n "IP: "
-	read IP_SERVER
-echo -n "Port: "
-        read PORT
-
-HTTP="0"
-read -p "Is https enabled (y/n)?" -n 1 -r
-        if [[  $REPLY =~ ^[Yy]$ ]]
-           then
-		HTTP="https"
-	   else
-		HTTP="http"
-           fi
+echo -n "In which port are you running $VERSION: "
+        read LOCAL_PORT
 echo " "
 echo " "
 echo "Now enter the information of your delegate."
@@ -81,6 +116,7 @@ echo -n "Delegate passphrase: "
 	read SECRET
 echo -n "How you identify this server?: "
         read SERVER_NAME
+
 init=configtoolisk.sh
 
 echo " "
@@ -91,6 +127,7 @@ echo "YELLOW='\033[1;33m'">> $init
 echo "GREEN='\033[1;32m'" >> $init
 echo "CYAN='\033[1;36m'" >> $init
 echo "OFF='\033[0m' # No Color" >> $init
+echo "VERSION=\"$VERSION\"" >> $init
 echo "API_KEY=\"$API_KEY\" #your mailgun API key" >> $init
 echo "MG_FROM=\"$MG_FROM\" #Default SMTP Login" >> $init
 echo "MAILGUN=\"$MAILGUN/messages\" #API Base URL" >> $init
@@ -102,17 +139,19 @@ echo "OFFSET=\"$scale\"" >> $init
 echo "IP_SERVER=\"$IP_SERVER\" #IP of the extra syncronized server" >> $init
 echo "HTTP=\"$HTTP\" #http or https if is activated" >> $init
 echo "PORT=\"$PORT\"" >> $init
+echo "LOCAL_PORT=\"$LOCAL_PORT\"" >> $init
 echo "SECRET=\"$SECRET\" #Passphrase of DELEGATE_NAME" >> $init
-echo "URL_REMOTE=\"$HTTP://$IP_SERVER:$PORT/api/delegates/forging/enable\" #URL according variables HTTP, PORT and IP_SERVER" >> $init
-echo "URL_REMOTE_DISABLE=\"$HTTP://$IP_SERVER:$PORT/api/delegates/forging/disable\"" >> $init
-echo "URL_LOCAL=\"$HTTP://127.0.0.1:$PORT/api/delegates/forging/enable\"" >> $init
-echo "URL_LOCAL_DISABLE=\"$HTTP://127.0.0.1:$PORT/api/delegates/forging/disable\"" >> $init
+echo "URL_REMOTE=\"$HTTP://\$IP_SERVER:\$PORT/api/delegates/forging/enable\" #URL according variables HTTP, PORT and IP_SERVER" >> $init
+echo "URL_REMOTE_DISABLE=\"$HTTP://\$IP_SERVER:\$PORT/api/delegates/forging/disable\"" >> $init
+echo "URL_LOCAL=\"$HTTP://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/enable\"" >> $init
+echo "URL_LOCAL_DISABLE=\"$HTTP://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/disable\"" >> $init
 echo "BLOCKHEIGHT_LOG=~/toolisk/logs/blockheight.log" >> $init
 echo "CONSENSUS_LOG=~/toolisk/logs/consensus.log" >> $init
 echo "MANAGER_LOG=~/toolisk/logs/manager.log" >> $init
+echo "LOCAL_SNAPSHOTS=~/toolisk/snapshos/" >> $init
 echo "USERTOOL=\"$USER\"" >> $init
 echo "SERVER_NAME=\"$SERVER_NAME\""
-echo "cd /home/$USER/lisk-main/" >> $init
+echo "cd /home/$USER/$VERSION/" >> $init
 
 chmod u+x blockheight.sh
 chmod u+x consensus.sh

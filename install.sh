@@ -33,12 +33,16 @@ if [ -f "$1" ]; then
 		echo "You are installing this script for testnet"
 		VERSION="lisk-test"
 	;;
+	*)
+                echo "You are installing this script for mainnet"
+                VERSION="lisk-main"
+        ;;
 	esac
 else
 	echo "You are installing this script for mainnet"
 	echo "If you want to change this script to testnet please stop this installation and start again with:"
 	echo "bash install.sh test"
-	VERSION="lisk-test"
+	VERSION="lisk-main"
 fi
 
 
@@ -97,7 +101,9 @@ echo -n "Email to: "
         	        	HTTP="http"
 	           	fi
 		else
+		   echo
 		   echo -e "${YELLOW}WARNING!${OFF} This scripts works better with 2 servers. You can continue installing it and this script will do his best for you with one server"
+		   echo
 		fi
 
            else
@@ -148,7 +154,7 @@ echo "URL_LOCAL_DISABLE=\"$HTTP://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/d
 echo "BLOCKHEIGHT_LOG=~/toolisk/logs/blockheight.log" >> $init
 echo "CONSENSUS_LOG=~/toolisk/logs/consensus.log" >> $init
 echo "MANAGER_LOG=~/toolisk/logs/manager.log" >> $init
-echo "LOCAL_SNAPSHOTS=~/toolisk/snapshos/" >> $init
+echo "LOCAL_SNAPSHOTS=~/toolisk/snapshots/" >> $init
 echo "USERTOOL=\"$USER\"" >> $init
 echo "SERVER_NAME=\"$SERVER_NAME\""
 echo "cd /home/$USER/$VERSION/" >> $init

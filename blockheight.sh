@@ -28,6 +28,7 @@ top_height(){
                 echo "$SERVER_NAME is off?"
                 HEIGHT="0"
             fi
+     fi
    else
         echo -e "${RED}Your localhost is not responding.${OFF}"
         echo "Waiting.."

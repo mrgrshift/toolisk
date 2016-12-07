@@ -42,6 +42,12 @@ If you don't like 'screen' sessions you can use the tool of your choice.<br>
 `bash manager.sh` Use this script only in one of your servers. This script will control forging status.<br>
 This is very important, do not run manager.sh in two separate servers because you will be ending forging in two servers and will be bad for your delegate.
 <br>
+#SSL Instalation
+If you want to enable SSL in every one of your servers run the following script:<br>
+`bash localssl.sh`<br>
+It will ask you for the name of your delegate and an email.<br>
+After the process finish you will need to add your ssl file to config.json and reload lisk.
+<br>
 <br>
 ###Disclaimer
 Use at your own risk. Read the code and if it suits your needs you can use it.

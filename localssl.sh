@@ -1,6 +1,7 @@
 #!/bin/bash
 #This script will help you to generate a local ssl for your server
 #With this you can enable ssl in your config.json
+#Before you do a bash lisk.sh reload first check if your delegate is about to forge
 
 
 

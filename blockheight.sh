@@ -25,7 +25,7 @@ localhost_check(){
                    echo "reload.."
 		   bash lisk.sh reload
 		else
-	           echo "Waiting.."
+	           echo "Waiting..$l_count"
 	           sleep 15
 		   ((l_count+=1))
 		fi

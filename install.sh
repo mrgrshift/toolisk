@@ -93,13 +93,13 @@ echo -n "Email to: "
 		        read PORT
 
 		   HTTP="0"
-		   read -p "Is https enabled (y/n)?" -n 1 -r
-		        if [[  $REPLY =~ ^[Yy]$ ]]
-		           then
-		                HTTP="https"
-		           else
-        	        	HTTP="http"
-	           	fi
+                   read -p "Is https enabled (y/n)?" -n 1 -r
+                        if [[  $REPLY =~ ^[Yy]$ ]]
+                           then
+                                HTTP="https"
+                           else
+                                HTTP="http"
+                        fi
 		else
 		   echo
 		   echo -e "${YELLOW}WARNING!${OFF} This scripts works better with 2 servers. You can continue installing it and this script will do his best for you with one server"
@@ -111,8 +111,19 @@ echo -n "Email to: "
 		echo "Please run the installer again and select only the numer 1 or numer 2"
 		exit 1
            fi
-echo -n "In which port are you running $VERSION: "
-        read LOCAL_PORT
+
+
+	read -p "Is https enabled in your localhost (y/n)?" -n 1 -r
+            if [[  $REPLY =~ ^[Yy]$ ]]
+               then
+                  HTTP_LOCAL="https"
+               else
+                  HTTP_LOCAL="http"
+               fi
+	echo -n "In which port are you running $VERSION $HTTP_LOCAL: "
+        	read LOCAL_PORT
+
+
 echo " "
 echo " "
 echo "Now enter the information of your delegate."
@@ -145,12 +156,13 @@ echo "OFFSET=\"$scale\"" >> $init
 echo "IP_SERVER=\"$IP_SERVER\" #IP of the extra syncronized server" >> $init
 echo "HTTP=\"$HTTP\" #http or https if is activated" >> $init
 echo "PORT=\"$PORT\"" >> $init
+echo "HTTP_LOCAL=\"$HTTP_LOCAL\""
 echo "LOCAL_PORT=\"$LOCAL_PORT\"" >> $init
 echo "SECRET=\"$SECRET\" #Passphrase of DELEGATE_NAME" >> $init
 echo "URL_REMOTE=\"$HTTP://\$IP_SERVER:\$PORT/api/delegates/forging/enable\" #URL according variables HTTP, PORT and IP_SERVER" >> $init
-echo "URL_REMOTE_DISABLE=\"$HTTP://\$IP_SERVER:\$PORT/api/delegates/forging/disable\"" >> $init
-echo "URL_LOCAL=\"$HTTP://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/enable\"" >> $init
-echo "URL_LOCAL_DISABLE=\"$HTTP://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/disable\"" >> $init
+echo "URL_REMOTE_DISABLE=\"\$HTTP://\$IP_SERVER:\$PORT/api/delegates/forging/disable\"" >> $init
+echo "URL_LOCAL=\"\$HTTP_LOCAL://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/enable\"" >> $init
+echo "URL_LOCAL_DISABLE=\"\$HTTP_LOCAL://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/disable\"" >> $init
 echo "BLOCKHEIGHT_LOG=~/toolisk/logs/blockheight.log" >> $init
 echo "CONSENSUS_LOG=~/toolisk/logs/consensus.log" >> $init
 echo "MANAGER_LOG=~/toolisk/logs/manager.log" >> $init

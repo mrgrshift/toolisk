@@ -1,6 +1,6 @@
 # toolisk
 
-This script works for 1 and 2 servers. But preferably it is recommended to have 2 servers minimum.<br>
+This script works for 1 or 2 servers. But preferably it is recommended to have 2 servers.<br>
 First make sure you do not have your SECRET set up in the lisk configuration (config.json).<br>
 
 #Requisites
@@ -33,7 +33,7 @@ After you install it you can run the following scripts:<br>
 If you don't like 'screen' sessions you can use the tool of your choice.<br>
 <br>
 ###blockheight.sh
-`bash blockheight.sh` This script will watch and compare your blockheight against top height.<br>
+`bash blockheight.sh` This script will watch and compare your blockheight against top height. Also this script is responsible for all reload/rebuild processes<br>
 <br>
 ###consensus.sh
 `bash consensus.sh` This script will watch for your consensus, if its Inadequate it will automatically do failover.<br>

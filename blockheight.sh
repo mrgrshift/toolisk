@@ -223,7 +223,7 @@ start_reload(){
 	echo "Starting reload at $TIME"
 
         bash lisk.sh reload
-        sleep 10
+        sleep 15
         echo "Reload finished"
 }
 
@@ -254,7 +254,7 @@ found_fork_alert(){
 	   fi
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
 	bash lisk.sh reload
-	sleep 10
+	sleep 15
 }
 
 local_height() {
@@ -297,7 +297,7 @@ local_height() {
         then
                 echo "lisk.sh reload"
                 bash lisk.sh reload
-                sleep 10
+                sleep 15
         fi
 
 

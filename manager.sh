@@ -13,10 +13,25 @@ LOCAL_HEIGHT="0"
 REMOTE_HEIGHT="0"
 BAD_CONSENSUS="0"
 
+
+localhost_check(){
+   l_count="0"
+   while true; do
+           STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+           if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+             if [ "$STATUS" -eq "200" ]; then
+                break
+             fi
+           else
+              echo -e "${RED}Your localhost is not responding.${OFF}"
+              echo "Waiting.. forging in your remote server"
+	      RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
+              sleep 15
+           fi
+   done
+}
+
 top_height(){
-  STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
-   if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
-     if [ "$STATUS" -eq "200" ]; then
         ## Get height of your 100 peers and save the highest value
         ## Thanks to wannabe_RoteBaron for this improvement
         HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
@@ -26,12 +41,6 @@ top_height(){
            sleep 1
            HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
         done
-     fi
-   else
-        echo -e "${RED}Your localhost is not responding${OFF}"
-        echo "waiting.."
-        sleep 15
-   fi
 }
 
 
@@ -121,6 +130,7 @@ check_github_updates(){
 
 
 while true; do
+	localhost_check
         top_height
         get_own_height
         validate_heights
@@ -168,13 +178,6 @@ while true; do
    fi
 
 
-        if [ "$BAD_CONSENSUS" -eq "3" ] && [ "$diff" -lt "4" ]
-        then
-                echo "lisk.sh reload"
-                bash lisk.sh reload
-                sleep 10
-        fi
-
         TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
 
         echo " "
@@ -182,7 +185,7 @@ while true; do
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging" >> $MANAGER_LOG
 #	check_github_updates
-        sleep 7
+        sleep 5
 done
 
 

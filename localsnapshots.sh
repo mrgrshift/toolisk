@@ -74,5 +74,5 @@ while true; do
 	echo "$TIME start new checkup"
 	check_updates
 	echo "--------------------------end of checkup"
-	sleep 10000
+	sleep 3600 #every 60 minutes
 done

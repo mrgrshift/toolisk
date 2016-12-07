@@ -9,10 +9,31 @@ CHECKSRV=1	#Local height
 BAD_CONSENSUS="0"
 SRV="127.0.0.1:$LOCAL_PORT"
 
+
+localhost_check(){
+   l_count="0"
+   while true; do
+	   STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$SRV/api/peers" | grep "HTTP" | cut -f2 -d" ")
+	   if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+	     if [ "$STATUS" -eq "200" ]; then
+		break
+	     fi
+	   else
+		echo -e "${RED}Your localhost is not responding.${OFF}"
+		if [ "$l_count" -gt "4" ]; then
+		   #If localhost not respond in 1 minute do reload
+                   echo "reload.."
+		   bash lisk.sh reload
+		else
+	           echo "Waiting.."
+	           sleep 15
+		   ((l_count+=1))
+		fi
+	   fi
+   done
+}
+
 top_height(){
-   STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$SRV/api/peers" | grep "HTTP" | cut -f2 -d" ")
-   if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
-     if [ "$STATUS" -eq "200" ]; then
 	## Get height of your 100 peers and save the highest value
 	## Thanks to wannabe_RoteBaron for this improvement
 	HEIGHT=$(curl -s http://$SRV/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
@@ -28,12 +49,6 @@ top_height(){
                 echo "$SERVER_NAME is off?"
                 HEIGHT="0"
             fi
-     fi
-   else
-        echo -e "${RED}Your localhost is not responding.${OFF}"
-        echo "Waiting.."
-        sleep 15
-   fi
 }
 
 get_remote_height(){
@@ -136,6 +151,7 @@ find_newest_snap_rebuild(){
 	    bash lisk.sh rebuild -u $REPO
    else
 	echo "Start to rebuild from local snapshot $LOCAL_SNAPSHOTS/$LOCAL_FILE"
+	echo "Start to rebuild from local snapshot $LOCAL_SNAPSHOTS/$LOCAL_FILE" >> $BLOCKHEIGHT_LOG
 	bash lisk.sh rebuild -l "$LOCAL_SNAPSHOTS/$LOCAL_FILE"
    fi
 }
@@ -277,14 +293,22 @@ local_height() {
         else
                 BAD_CONSENSUS="0"
         fi
+        if [ "$BAD_CONSENSUS" -eq "8" ] && [ "$diff" -lt "4" ]
+        then
+                echo "lisk.sh reload"
+                bash lisk.sh reload
+                sleep 10
+        fi
+
 
 	get_remote_height
 	diff=$(( $HEIGHT - $REMOTE_HEIGHT ))
-        if [ "$BAD_CONSENSUS" -gt "15" ] && [ "$diff" -lt "4" ]
+        if [ "$BAD_CONSENSUS" -gt "30" ] && [ "$diff" -lt "4" ]
         then
 		#If the low consensus is repeated many times make rebuild as long as remote server is not rebuilding
                 rebuild_alert
                 echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"
+		echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS" >> $BLOCKHEIGHT_LOG
                 #bash lisk.sh rebuild
                 find_newest_snap_rebuild
                 check_if_rebuild_finish
@@ -297,6 +321,7 @@ echo "Starting log.. " > $BLOCKHEIGHT_LOG
 echo "Starting toolisk"
 while true; do
 	TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
+	localhost_check
 	top_height
 	if [ "$HEIGHT" -gt "0" ]
 	then
@@ -308,7 +333,7 @@ while true; do
 	get_broadhash
         echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME"
         echo "Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME" >> $BLOCKHEIGHT_LOG
-        sleep 9
+        sleep 4
 done
 
 

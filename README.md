@@ -46,7 +46,9 @@ This is very important, do not run manager.sh in two separate servers because yo
 If you want to enable SSL in every one of your servers run the following script:<br>
 `bash localssl.sh`<br>
 It will ask you for the name of your delegate and an email.<br>
-After the process finish you will need to add your ssl file to config.json and reload lisk.
+After the process finish the script will tell you what to add/change and where.<br>
+
+
 <br>
 <br>
 ###Disclaimer

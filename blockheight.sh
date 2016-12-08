@@ -7,7 +7,7 @@ source configtoolisk.sh
 HEIGHT=1	#Highest height
 CHECKSRV=1	#Local height
 BAD_CONSENSUS="0"
-SRV="127.0.0.1:$LOCAL_PORT"
+SRV="127.0.0.1:8000"
 
 
 localhost_check(){

@@ -83,7 +83,7 @@ echo -n "Email to: "
         read -p "How many servers are you using (1 or 2)?" -n 1 -r
         if [[  $REPLY =~ ^[12]$ ]]
            then
-                echo " "
+                echo
 		if [ "$REPLY" -eq "2" ]; then
  		   echo "Now we are going to configure the failover settings."
 		   echo "Please enter the folling information (of your backup server): "
@@ -100,6 +100,7 @@ echo -n "Email to: "
                            else
                                 HTTP="http"
                         fi
+		   echo
 		else
 		   echo
 		   echo -e "${YELLOW}WARNING!${OFF} This scripts works better with 2 servers. You can continue installing it and this script will do his best for you with one server"
@@ -120,6 +121,7 @@ echo -n "Email to: "
                else
                   HTTP_LOCAL="http"
                fi
+	echo
 	echo -n "In which port are you running $VERSION $HTTP_LOCAL: "
         	read LOCAL_PORT
 

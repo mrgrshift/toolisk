@@ -17,7 +17,7 @@ BAD_CONSENSUS="0"
 localhost_check(){
    l_count="0"
    while true; do
-           STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+           STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://127.0.0.1:8000/api/peers" | grep "HTTP" | cut -f2 -d" ")
            if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
              if [ "$STATUS" -eq "200" ]; then
                 break
@@ -25,6 +25,7 @@ localhost_check(){
            else
               echo -e "${RED}Your localhost is not responding.${OFF}"
               echo "Waiting.. forging in your remote server"
+	      RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE)
 	      RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
               sleep 15
            fi
@@ -34,22 +35,22 @@ localhost_check(){
 top_height(){
         ## Get height of your 100 peers and save the highest value
         ## Thanks to wannabe_RoteBaron for this improvement
-        HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+        HEIGHT=$(curl -s http://127.0.0.1:8000/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
         ## Make sure height is not empty, if it is empty try the call until it is not empty
         while [ -z "$HEIGHT" ]
         do
            sleep 1
-           HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+           HEIGHT=$(curl -s http://127.0.0.1:8000/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
         done
 }
 
 
 get_own_height(){
-        LOCAL_HEIGHT=$(curl -s http://$LOCALHOST/api/loader/status/sync | jq '.height')
+        LOCAL_HEIGHT=$(curl -s http://127.0.0.1:8000/api/loader/status/sync | jq '.height')
         while [ -z "$LOCAL_HEIGHT" ]
         do
                 sleep 1
-                LOCAL_HEIGHT=$(curl -s http://$LOCALHOST/api/loader/status/sync | jq '.height')
+                LOCAL_HEIGHT=$(curl -s http://127.0.0.1:8000/api/loader/status/sync | jq '.height')
         done
 
         REMOTE_HEIGHT=$(curl -s http://$SRV_REMOTE/api/loader/status/sync | jq '.height')

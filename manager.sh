@@ -7,7 +7,7 @@
 source configtoolisk.sh
 
 
-SRV_REMOTE="$IP_SERVER:$PORT"
+SRV_REMOTE="$IP_SERVER:8000"
 LOCALHOST="127.0.0.1:$LOCAL_PORT"
 LOCAL_HEIGHT="0"
 REMOTE_HEIGHT="0"
@@ -25,7 +25,9 @@ localhost_check(){
            else
               echo -e "${RED}Your localhost is not responding.${OFF}"
               echo "Waiting.. forging in your remote server"
+		#Disable local
 	      RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE)
+		#Enable remote
 	      RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
               sleep 15
            fi
@@ -153,21 +155,25 @@ while true; do
         then
                 #enable remote forging
                 echo "$TIME Enable remote forging -- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
+		#Disable local
+	        curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE >> $MANAGER_LOG
+		#Enable remote
                 RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 echo $RESPONSE >> $MANAGER_LOG
                 forging="remote"
 		echo
                 echo "$TIME Disable local forging" >> $MANAGER_LOG
-                curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE >> $MANAGER_LOG
         else
                 #enable local forging
                 echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
+		#Disable remote
+                curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
+		#Enable local
                 RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL)
                 echo $RESPONSE >> $MANAGER_LOG
                 forging="local"
 		echo
                 echo "$TIME Disable remote forging" >> $MANAGER_LOG
-                curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
         fi
    else
         #enable local forging

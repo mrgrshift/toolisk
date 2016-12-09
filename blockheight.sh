@@ -8,12 +8,14 @@ HEIGHT=1	#Highest height
 CHECKSRV=1	#Local height
 BAD_CONSENSUS="0"
 SRV="127.0.0.1:8000"
-
+LOCALHOST="127.0.0.1:8000"
+REMOTEHOST="$IP_SERVER:8000"
+NEXTTURN=""
 
 localhost_check(){
    l_count="0"
    while true; do
-	   STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$SRV/api/peers" | grep "HTTP" | cut -f2 -d" ")
+	   STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
 	   if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
 	     if [ "$STATUS" -eq "200" ]; then
 		break
@@ -36,12 +38,12 @@ localhost_check(){
 top_height(){
 	## Get height of your 100 peers and save the highest value
 	## Thanks to wannabe_RoteBaron for this improvement
-	HEIGHT=$(curl -s http://$SRV/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+	HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
 	## Make sure height is not empty, if it is empty try the call until it is not empty
 	while [ -z "$HEIGHT" ]
 	do
     	   sleep 1
-    	   HEIGHT=$(curl -s http://$SRV/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+    	   HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
 	done
 
         if ! [[ "$HEIGHT" =~ ^[0-9]+$ ]];
@@ -54,12 +56,12 @@ top_height(){
 get_remote_height(){
   if ! [ -z "$IP_SERVER" ]
   then
-        REMOTE_HEIGHT=`curl -s "$HTTP://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+        REMOTE_HEIGHT=`curl -s "http://$REMOTEHOST/api/loader/status/sync"| jq '.height'`
 	local_count="0"
         while [ -z "$REMOTE_HEIGHT" ]
         do
                 sleep 1
-                REMOTE_HEIGHT=`curl -s "$HTTP://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+                REMOTE_HEIGHT=`curl -s "http://$REMOTEHOST/api/loader/status/sync"| jq '.height'`
                 ((local_count+=1))
                 if [ "$local_count" -gt "5" ]; then
                         #If after 5 seconds the remote server does not respond
@@ -80,11 +82,11 @@ get_remote_height(){
 }
 
 get_local_height(){
-	CHECKSRV=`curl -s "http://$SRV/api/loader/status/sync"| jq '.height'`
+	CHECKSRV=`curl -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
 	while [ -z "$CHECKSRV" ]
 	do
 	    	sleep 1
-		CHECKSRV=`curl -s "http://$SRV/api/loader/status/sync"| jq '.height'`
+		CHECKSRV=`curl -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
 	done
 
         if ! [[ "$CHECKSRV" =~ ^[0-9]+$ ]];
@@ -92,6 +94,25 @@ get_local_height(){
                 echo "$SERVER_NAME is off?"
                 CHECKSRV="0"
             fi
+}
+
+get_nextturn(){
+    STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then  #If localhost is responding
+        RESPONSE=$(curl -s http://$LOCALHOST/api/delegates/getNextForgers?limit=101 | jq '.delegates')
+        i="0"
+        while [ "$i" -lt "101" ]; do
+           v1=$(echo $RESPONSE | jq '.['$i']')
+           PK="${v1//\"/}"
+           if [ "$PK" == "$PUBLICKEY" ]; then
+                NEXTTURN=$(( $i * 10 ))
+                break
+           fi
+           ((i+=1))
+        done
+     fi
+    fi
 }
 
 get_broadhash(){
@@ -160,8 +181,8 @@ rebuild_alert(){
                 TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
 	  if ! [ -z "$IP_SERVER" ]; then
                 #failover script
+		curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE
                 RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
-                curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE
                 echo $RESPONSE | grep "true" > /dev/null
                if [ $? = 0 ]; then
                    echo -e "${GREEN}Forging activated successfully${OFF}"
@@ -191,19 +212,20 @@ post_rebuild(){
 		top_height
 		get_local_height
 		get_broadhash
+		get_nextturn
 		BAD_CONSENSUS="0"
 
-                MG_SUBJECT="$DELEGATE_NAME rebuild synchronization ended Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
-                MG_TEXT="$DELEGATE_NAME rebuild synchronization ended Highest: $HEIGHT - rebuild: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
+                MG_SUBJECT="$DELEGATE_NAME sync ended $NEXTTURN ($ACTUAL_BROADHASH_CONSENSUS %) Highest: $HEIGHT - Local: $CHECKSRV"
+                MG_TEXT="$DELEGATE_NAME rebuild synchronization ended. Next turn: $NEXTTURN s Highest: $HEIGHT - rebuild: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %)"
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 }
 
 ## Thank you corsaro for this improvement
 check_if_rebuild_finish(){
 	while true; do
-		s1=`curl -k -s "http://$SRV/api/loader/status/sync"| jq '.height'`
+		s1=`curl -k -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
 		sleep 30
-		s2=`curl -k -s "http://$SRV/api/loader/status/sync"| jq '.height'`
+		s2=`curl -k -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
 
 		diff=$(( $s2 - $s1 ))
 		if [ "$diff" -gt "10" ]
@@ -261,6 +283,7 @@ local_height() {
     ## Get height of this server and see if it's greater or within 4 of the highest
 	get_local_height
         get_broadhash
+	get_nextturn
 
 	is_forked=`tail logs/lisk.log -n 20 | grep "Fork"`
 	if [ -n "$is_forked" ]
@@ -270,7 +293,7 @@ local_height() {
 	fi
 
         diff=$(( $HEIGHT - $CHECKSRV ))
-        if [ "$diff" -gt "3" ]
+        if [ "$diff" -gt "3" ] && [ "$NEXTTURN" -gt "30" ]
         then
 		start_reload
 		get_local_height
@@ -293,7 +316,8 @@ local_height() {
         else
                 BAD_CONSENSUS="0"
         fi
-        if [ "$BAD_CONSENSUS" -eq "8" ] && [ "$diff" -lt "4" ]
+
+        if [ "$BAD_CONSENSUS" -eq "8" ] && [ "$diff" -lt "4" ] && [ "$NEXTTURN" -gt "30" ]
         then
                 echo "lisk.sh reload"
                 bash lisk.sh reload
@@ -303,12 +327,12 @@ local_height() {
 
 	get_remote_height
 	diff=$(( $HEIGHT - $REMOTE_HEIGHT ))
-        if [ "$BAD_CONSENSUS" -gt "30" ] && [ "$diff" -lt "4" ]
+        if [ "$BAD_CONSENSUS" -gt "30" ] && [ "$diff" -lt "4" ] && [ "$NEXTTURN" -gt "180" ]
         then
 		#If the low consensus is repeated many times make rebuild as long as remote server is not rebuilding
                 rebuild_alert
-                echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"
-		echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS" >> $BLOCKHEIGHT_LOG
+                echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- turn $NEXTTURN s"
+		echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- turn $NEXTTURN s" >> $BLOCKHEIGHT_LOG
                 #bash lisk.sh rebuild
                 find_newest_snap_rebuild
                 check_if_rebuild_finish
@@ -331,7 +355,7 @@ while true; do
 	fi
 
 	get_broadhash
-        echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME"
+        echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME -- NEXT TURN IN $NEXTTURN s"
         echo "Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME" >> $BLOCKHEIGHT_LOG
         sleep 4
 done

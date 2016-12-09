@@ -54,12 +54,12 @@ top_height(){
 get_remote_height(){
   if ! [ -z "$IP_SERVER" ]
   then
-        REMOTE_HEIGHT=`curl -s "http://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+        REMOTE_HEIGHT=`curl -s "$HTTP://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
 	local_count="0"
         while [ -z "$REMOTE_HEIGHT" ]
         do
                 sleep 1
-                REMOTE_HEIGHT=`curl -s "http://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
+                REMOTE_HEIGHT=`curl -s "$HTTP://$IP_SERVER:$PORT/api/loader/status/sync"| jq '.height'`
                 ((local_count+=1))
                 if [ "$local_count" -gt "5" ]; then
                         #If after 5 seconds the remote server does not respond

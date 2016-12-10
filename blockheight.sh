@@ -256,20 +256,20 @@ found_fork_alert(){
         echo "Starting reload at $TIME"
           if ! [ -z "$IP_SERVER" ]; then
                 #failover script
-                RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE
+                RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
                 echo $RESPONSE | grep "true" > /dev/null
                if [ $? = 0 ]; then
                    echo -e "${GREEN}Forging activated successfully${OFF}"
 
-                   MG_SUBJECT="$DELEGATE_NAME reload in $SERVER_NAME found fork. Started Forging enabled successfully in $IP_SERVER"
-                   MG_TEXT="$DELEGATE_NAME reload started in $SERVER_NAME. "$'\r\n'"Found fork: $FORK "$'\r\n'"Forging enabled successfully in $IP_SERVER Response: "$'\r\n'"$RESPONSE"
+                   MG_SUBJECT="$DELEGATE_NAME reload in $SERVER_NAME found fork.$NEXTTURN Started Forging enabled successfully in $IP_SERVER"
+                   MG_TEXT="$DELEGATE_NAME reload started in $SERVER_NAME -- Next turn $NEXTTURN s. "$'\r\n'"Found fork: $FORK "$'\r\n'"Forging enabled successfully in $IP_SERVER Response: "$'\r\n'"$RESPONSE"
                    echo "Forging enabled in $IP_SERVER > $RESPONSE" >> $BLOCKHEIGHT_LOG
                 else
                    echo -e "${RED}Forging not enabled!${OFF} - $RESPONSE"
                    echo "Forging NOT enabled! > $RESPONSE" >> $BLOCKHEIGHT_LOG
-                   MG_SUBJECT="$DELEGATE_NAME reload in $SERVER_NAME found fork. Forging $RESPONSE"
-                   MG_TEXT="$DELEGATE_NAME reload started in $SERVER_NAME."$'\r\n'"Found fork: "$'\r\n'"$FORK "$'\r\n\r\n'"Forging not enabled. Response:"$'\r\n'"$RESPONSE"
+                   MG_SUBJECT="$DELEGATE_NAME reload in $SERVER_NAME found fork.$NEXTTURN Forging $RESPONSE"
+                   MG_TEXT="$DELEGATE_NAME reload started in $SERVER_NAME -- Next turn $NEXTTURN s."$'\r\n'"Found fork: "$'\r\n'"$FORK "$'\r\n\r\n'"Forging not enabled. Response:"$'\r\n'"$RESPONSE"
                 fi
 
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"

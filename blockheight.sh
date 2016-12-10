@@ -276,10 +276,8 @@ found_fork_alert(){
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 	   fi
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
-	if [ "$NEXTTURN" -gt "30" ]; then
 	   bash lisk.sh reload
 	   sleep 15
-	fi
 }
 
 local_height() {
@@ -289,7 +287,7 @@ local_height() {
 	get_nextturn
 
 	is_forked=`tail logs/lisk.log -n 20 | grep "Fork"`
-	if [ -n "$is_forked" ]
+	if [ -n "$is_forked" ] && [ "$NEXTTURN" -gt "30" ]
 	then
 		echo "Found fork: $is_forked"
 		found_fork_alert "$is_forked"
@@ -302,7 +300,7 @@ local_height() {
 		get_local_height
                 diff=$(( $HEIGHT - $CHECKSRV ))
                 ## Rebuild if still out of sync after reload
-                if [ "$diff" -gt "4" ]
+                if [ "$diff" -gt "4" ] && [ "$NEXTTURN" -gt "180" ]
                 then
                         rebuild_alert
                         echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"

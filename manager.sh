@@ -7,17 +7,18 @@
 source configtoolisk.sh
 
 
-SRV_REMOTE="$IP_SERVER:8000"
-LOCALHOST="127.0.0.1:$LOCAL_PORT"
+LOCALHOST="127.0.0.1:8000"
 LOCAL_HEIGHT="0"
+LOCAL_CONSENSUS="0"
+REMOTEHOST="$IP_SERVER:8000"
 REMOTE_HEIGHT="0"
+REMOTE_CONSENSUS="0"
 BAD_CONSENSUS="0"
-
+NEXTTURN="0"
 
 localhost_check(){
-   l_count="0"
    while true; do
-           STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://127.0.0.1:8000/api/peers" | grep "HTTP" | cut -f2 -d" ")
+           STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
            if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
              if [ "$STATUS" -eq "200" ]; then
                 break
@@ -34,33 +35,105 @@ localhost_check(){
    done
 }
 
+remote_forging(){
+    STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then  #If localhost is responding
+	RESPONSE=$(curl -s $URL_LOCAL_FORGING_STATUS | jq '.enabled') #true or false
+	if [ "$RESPONSE" = "true" ]; then #If remote is enable, proceed to disable
+	    while true; do
+		#Disable local
+	        curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE
+		RESPONSE=$(curl -s $URL_LOCAL_FORGING_STATUS | jq '.enabled') #true or false
+		if [ "$RESPONSE" = "false" ]; then #It should not be forging in local
+		   break;
+		fi
+	    done
+	fi
+     fi
+    fi
+
+    STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$REMOTEHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then  #If remotehost is responding
+        RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
+        if [ "$RESPONSE" = "false" ]; then #If remote is disabled, proceed to enable
+	    while true; do
+	        #Enable remote
+	        curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE
+	        RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
+	        if [ "$RESPONSE" = "true" ]; then #Remote forging = true
+	           break;
+	        fi
+	    done
+        fi
+     fi
+    fi
+}
+
+local_forging(){
+    STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$REMOTEHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then  #If remotehost is responding
+        RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
+        if [ "$RESPONSE" = "true" ]; then #If remote is enabled, proceed to disable
+	    while true; do
+	        #Disable remote
+	        curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE
+	        RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
+	        if [ "$RESPONSE" = "false" ]; then #It should not be forging in remote
+	           break;
+	        fi
+	    done
+        fi
+     fi
+    fi
+
+    STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then  #If localhost is responding
+        RESPONSE=$(curl -s $URL_LOCAL_FORGING_STATUS | jq '.enabled') #true or false
+        if [ "$RESPONSE" = "false" ]; then #If localhost is disabled, proceed to enable
+	    while true; do
+	        #Enable local
+	        curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL
+	        RESPONSE=$(curl -s $URL_LOCAL_FORGING_STATUS | jq '.enabled') #true or false
+	        if [ "$RESPONSE" = "true" ]; then #Local forging = true
+	           break;
+	        fi
+	    done
+        fi
+     fi
+    fi
+}
+
 top_height(){
         ## Get height of your 100 peers and save the highest value
         ## Thanks to wannabe_RoteBaron for this improvement
-        HEIGHT=$(curl -s http://127.0.0.1:8000/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+        HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
         ## Make sure height is not empty, if it is empty try the call until it is not empty
         while [ -z "$HEIGHT" ]
         do
            sleep 1
-           HEIGHT=$(curl -s http://127.0.0.1:8000/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+           HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
         done
 }
 
 
 get_own_height(){
-        LOCAL_HEIGHT=$(curl -s http://127.0.0.1:8000/api/loader/status/sync | jq '.height')
+        LOCAL_HEIGHT=$(curl -s http://$LOCALHOST/api/loader/status/sync | jq '.height')
         while [ -z "$LOCAL_HEIGHT" ]
         do
                 sleep 1
-                LOCAL_HEIGHT=$(curl -s http://127.0.0.1:8000/api/loader/status/sync | jq '.height')
+                LOCAL_HEIGHT=$(curl -s http://$LOCALHOST/api/loader/status/sync | jq '.height')
         done
 
-        REMOTE_HEIGHT=$(curl -s http://$SRV_REMOTE/api/loader/status/sync | jq '.height')
+        REMOTE_HEIGHT=$(curl -s http://$REMOTEHOST/api/loader/status/sync | jq '.height')
 	local_count="0"
         while [ -z "$REMOTE_HEIGHT" ]
         do
                 sleep 1
-                REMOTE_HEIGHT=$(curl -s http://$SRV_REMOTE/api/loader/status/sync | jq '.height')
+                REMOTE_HEIGHT=$(curl -s http://$REMOTEHOST/api/loader/status/sync | jq '.height')
 		((local_count+=1))
 		if [ "$local_count" -gt "5" ]; then
 			#If after 5 seconds the remote server does not respond
@@ -99,6 +172,24 @@ validate_heights(){
     fi
 }
 
+get_nextturn(){
+    STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then  #If localhost is responding
+        RESPONSE=$(curl -s http://$LOCALHOST/api/delegates/getNextForgers?limit=101 | jq '.delegates')
+        i="0"
+        while [ "$i" -lt "101" ]; do
+           v1=$(echo $RESPONSE | jq '.['$i']')
+           PK="${v1//\"/}"
+           if [ "$PK" == "$PUBLICKEY" ]; then
+                NEXTTURN=$(( $i * 10 ))
+                break
+           fi
+           ((i+=1))
+        done
+     fi
+    fi
+}
 
 get_broadhash(){
     ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
@@ -138,6 +229,7 @@ while true; do
         get_own_height
         validate_heights
 	get_broadhash
+	get_nextturn
 
         if [ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ]
         then
@@ -154,32 +246,19 @@ while true; do
         if [ "$diff" -gt "$diff2" ] || ([ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ] && [ "$diff2" -lt "4" ])
         then
                 #enable remote forging
-                echo "$TIME Enable remote forging -- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
-		#Disable local
-	        curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL_DISABLE >> $MANAGER_LOG
-		#Enable remote
-                RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
-                echo $RESPONSE >> $MANAGER_LOG
+		remote_forging
+                echo "$TIME Enable remote forging -- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
                 forging="remote"
-		echo
-                echo "$TIME Disable local forging" >> $MANAGER_LOG
         else
                 #enable local forging
-                echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
-		#Disable remote
-                curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE >> $MANAGER_LOG
-		#Enable local
-                RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL)
-                echo $RESPONSE >> $MANAGER_LOG
+		local_forging
+                echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
                 forging="local"
-		echo
-                echo "$TIME Disable remote forging" >> $MANAGER_LOG
         fi
    else
         #enable local forging
-        echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS %" >> $MANAGER_LOG
-        RESPONSE=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_LOCAL)
-        echo $RESPONSE >> $MANAGER_LOG
+	local_forging
+        echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
         forging="local"
         echo -e "${YELLOW}Reminder --- Install another server for backup${OFF}"
    fi
@@ -188,10 +267,9 @@ while true; do
         TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
 
         echo " "
-	echo "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51"
+	echo "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51 -- NEXT TURN IN $NEXTTURN s"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging"
-        echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging" >> $MANAGER_LOG
-#	check_github_updates
+        echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
         sleep 5
 done
 

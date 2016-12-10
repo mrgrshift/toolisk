@@ -357,7 +357,7 @@ while true; do
 
 	get_broadhash
         echo -e "${GREEN}Highest: $HEIGHT${OFF} -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME -- NEXT TURN IN $NEXTTURN s"
-        echo "Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME" >> $BLOCKHEIGHT_LOG
+        echo "Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- $TIME -- NEXT TURN IN $NEXTTURN s" >> $BLOCKHEIGHT_LOG
         sleep 4
 done
 

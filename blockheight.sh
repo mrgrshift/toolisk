@@ -276,8 +276,10 @@ found_fork_alert(){
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 	   fi
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
-	bash lisk.sh reload
-	sleep 15
+	if [ "$NEXTTURN" -gt "30" ]
+	   bash lisk.sh reload
+	   sleep 15
+	fi
 }
 
 local_height() {

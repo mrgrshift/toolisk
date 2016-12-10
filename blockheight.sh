@@ -187,20 +187,20 @@ rebuild_alert(){
                if [ $? = 0 ]; then
                    echo -e "${GREEN}Forging activated successfully${OFF}"
                    echo "Forging enabled > $RESPONSE" >> $BLOCKHEIGHT_LOG
-                   MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started Forging enabled successfully in remote $IP_SERVER"
-                   MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging enabled successfully in remote $IP_SERVER"$'\r\n'"Response:"$'\r\n'"$RESPONSE"
+                   MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME T$NEXTTURN s rebuild started Forging enabled successfully in remote $IP_SERVER"
+                   MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started next turn $NEXTTURN. Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging enabled successfully in remote $IP_SERVER"$'\r\n'"Response:"$'\r\n'"$RESPONSE"
                 else
                    echo -e "${RED}Forging not enabled${OFF} - $RESPONSE"
                    echo "Forging NOT enabled! > $RESPONSE" >> $BLOCKHEIGHT_LOG
-                   MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started -- Forging $RESPONSE"
-                   MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started "$'\r\n'"Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging not enabled! Response: "$'\r\n'"$RESPONSE"
+                   MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started T$NEXTTURN -- Forging $RESPONSE"
+                   MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started next turn $NEXTTURN"$'\r\n'"Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging not enabled! Response: "$'\r\n'"$RESPONSE"
                 fi
 
                 echo "Starting rebuild at $TIME"
                 echo "Starting rebuild at $TIME" >> $BLOCKHEIGHT_LOG
 	  else
-	        MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started -- Your delegate is not forging now"
-	        MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started "$'\r\n'"Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging not enabled because there's no backup node installed"
+	        MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started T$NEXTTURN-- Your delegate is not forging now"
+	        MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started next turn $NEXTTURN"$'\r\n'"Highest: $HEIGHT - Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging not enabled because there's no backup node installed"
 	  fi
       curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 }
@@ -251,8 +251,9 @@ start_reload(){
 
 found_fork_alert(){
 	FORK=$1
-	echo "Found fork: $FORK" >> $BLOCKHEIGHT_LOG
         TIME=$(date +"%H:%M") #add for your local time: -d '6 hours ago')
+	echo "$TIME Found fork: $FORK" >> $BLOCKHEIGHT_LOG
+	echo "Found fork: $FORK"
         echo "Starting reload at $TIME"
           if ! [ -z "$IP_SERVER" ]; then
                 #failover script

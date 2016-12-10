@@ -276,7 +276,7 @@ found_fork_alert(){
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 	   fi
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
-	if [ "$NEXTTURN" -gt "30" ]
+	if [ "$NEXTTURN" -gt "30" ]; then
 	   bash lisk.sh reload
 	   sleep 15
 	fi

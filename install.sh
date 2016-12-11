@@ -169,6 +169,9 @@ echo "BLOCKHEIGHT_LOG=~/toolisk/logs/blockheight.log" >> $init
 echo "CONSENSUS_LOG=~/toolisk/logs/consensus.log" >> $init
 echo "MANAGER_LOG=~/toolisk/logs/manager.log" >> $init
 echo "LOCAL_SNAPSHOTS=~/toolisk/snapshots/" >> $init
+echo "PUBLICKEY=\"\"" >> $init
+echo "URL_LOCAL_FORGING_STATUS=\"http://localhost:8000/api/delegates/forging/status?publicKey=\$PUBLICKEY\"" >> $init
+echo "URL_REMOTE_FORGING_STATUS=\"http://$IP_SERVER:8000/api/delegates/forging/status?publicKey=\$PUBLICKEY\"" >> $init
 echo "USERTOOL=\"$USER\"" >> $init
 echo "SERVER_NAME=\"$SERVER_NAME\""
 echo "cd /home/$USER/$VERSION/" >> $init

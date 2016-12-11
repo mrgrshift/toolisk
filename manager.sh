@@ -191,6 +191,17 @@ get_nextturn(){
     fi
 }
 
+get_remote_consensus(){
+    STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$REMOTEHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    REMOTE_CONSENSUS="0"
+    if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
+     if [ "$STATUS" -eq "200" ]; then  #If localhost is responding
+        REMOTE_CONSENSUS=$(curl -s http://$REMOTEHOST/api/loader/status/sync | jq '.consensus')
+     fi
+    fi
+}
+
+
 get_broadhash(){
     ACTUAL_BROADHASH_CONSENSUS=$(tac logs/lisk.log | awk '/ %/ {p=1; split($0, a, " %"); $0=a[1]};
                 /Broadhash consensus now /   {p=0; split($0, a, "Broadhash consensus now ");  $0=a[2]; print; exit};
@@ -230,6 +241,7 @@ while true; do
         validate_heights
 	get_broadhash
 	get_nextturn
+	get_remote_consensus
 
         if [ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ]
         then
@@ -247,18 +259,18 @@ while true; do
         then
                 #enable remote forging
 		remote_forging
-                echo "$TIME Enable remote forging -- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
+ #               echo "$TIME Enable remote forging -- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
                 forging="remote"
         else
                 #enable local forging
 		local_forging
-                echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
+#                echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
                 forging="local"
         fi
    else
         #enable local forging
 	local_forging
-        echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
+#        echo "$TIME Enable local forging-- Local consensus $ACTUAL_BROADHASH_CONSENSUS % -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
         forging="local"
         echo -e "${YELLOW}Reminder --- Install another server for backup${OFF}"
    fi
@@ -267,9 +279,28 @@ while true; do
         TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
 
         echo " "
-	echo "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51 -- NEXT TURN IN $NEXTTURN s"
+	if [ "$NEXTTURN" -lt "60" ]; then
+	   color=$RED
+	else
+	   color=$GREEN
+	fi
+	echo -e "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51 -- ${color}NEXT TURN IN $NEXTTURN s${OFF} -- Remote consensus ($REMOTE_CONSENSUS %)"
         echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging"
-        echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
+#        echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
+
+	#Actual status report
+	echo "<table>" > $MANAGER_LOG
+	echo "<tr><td>Top height: </td><td>$HEIGHT</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Local height: </td><td>$LOCAL_HEIGHT</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Remote height: </td><td>$REMOTE_HEIGHT</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td> </td><td></td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Local consensus: </td><td>$ACTUAL_BROADHASH_CONSENSUS %</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Remote consensus: </td><td>$REMOTE_CONSENSUS %</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td> </td><td></td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Forging </td><td>$forging</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td><b>Next turn in $NEXTTURN s</b></td></tr>" >> $MANAGER_LOG
+	RESPONSE=$(curl -s http://$LOCALHOST/api/accounts/delegates?address=3125853987625788223L | jq '.delegates[] | select(.username=="mrgr")')
+	echo "</table> <br><pre>$RESPONSE</pre>" >> $MANAGER_LOG
         sleep 5
 done
 

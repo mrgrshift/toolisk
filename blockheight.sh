@@ -26,6 +26,7 @@ localhost_check(){
 		   #If localhost not respond in 1 minute do reload
                    echo "reload.."
 		   bash lisk.sh reload
+		   sleep 15
 		else
 	           echo "Waiting..$l_count"
 	           sleep 15
@@ -98,6 +99,7 @@ get_local_height(){
 
 get_nextturn(){
     STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+    NEXTTURN="1000"
     if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
      if [ "$STATUS" -eq "200" ]; then  #If localhost is responding
         RESPONSE=$(curl -s http://$LOCALHOST/api/delegates/getNextForgers?limit=101 | jq '.delegates')
@@ -339,6 +341,18 @@ local_height() {
                 check_if_rebuild_finish
                 post_rebuild
         fi
+
+        if [ "$BAD_CONSENSUS" -gt "100" ]; then
+                #If the low consensus is repeated many times make rebuild 
+                rebuild_alert
+                echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- turn $NEXTTURN s"
+                echo "Rebuilding with heights: Highest: $HEIGHT -- Local: $CHECKSRV ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS -- turn $NEXTTURN s" >> $BLOCKHEIGHT_LOG
+                #bash lisk.sh rebuild
+                find_newest_snap_rebuild
+                check_if_rebuild_finish
+                post_rebuild
+        fi
+
 }
 
 

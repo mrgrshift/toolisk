@@ -287,13 +287,11 @@ while true; do
 
 	#Actual status report
 	echo "<table>" > $MANAGER_LOG
-	echo "<tr><td>Top height: </td><td>$HEIGHT</td></tr>" >> $MANAGER_LOG
-	echo "<tr><td>Local height: </td><td>$LOCAL_HEIGHT</td></tr>" >> $MANAGER_LOG
-	echo "<tr><td>Remote height: </td><td>$REMOTE_HEIGHT</td></tr>" >> $MANAGER_LOG
-	echo "<tr><td> </td><td></td></tr>" >> $MANAGER_LOG
-	echo "<tr><td>Local consensus: </td><td>$ACTUAL_BROADHASH_CONSENSUS %</td></tr>" >> $MANAGER_LOG
-	echo "<tr><td>Remote consensus: </td><td>$REMOTE_CONSENSUS %</td></tr>" >> $MANAGER_LOG
-	echo "<tr><td> </td><td></td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Top height </td><td>$HEIGHT</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Local height </td><td>$LOCAL_HEIGHT</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Remote height </td><td>$REMOTE_HEIGHT</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Local consensus </td><td>$ACTUAL_BROADHASH_CONSENSUS %</td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Remote consensus </td><td>$REMOTE_CONSENSUS %</td></tr>" >> $MANAGER_LOG
 	echo "<tr><td>Forging </td><td>$forging</td></tr>" >> $MANAGER_LOG
 	echo "<tr><td><b>Next turn in</td><td>$NEXTTURN s</b></td></tr>" >> $MANAGER_LOG
 	RESPONSE=$(curl -s http://$LOCALHOST/api/accounts/delegates?address=$DELEGATE_ADDRESS | jq '.delegates[] | select(.username=="'$DELEGATE_NAME'")')

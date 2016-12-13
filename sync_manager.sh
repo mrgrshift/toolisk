@@ -45,12 +45,21 @@ localhost_check(){
 top_height(){
 	## Get height of your 100 peers and save the highest value
 	## Thanks to wannabe_RoteBaron for this improvement
+	local_count="0"
 	HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
 	## Make sure height is not empty, if it is empty try the call until it is not empty
 	while [ -z "$HEIGHT" ]
 	do
     	   sleep 1
     	   HEIGHT=$(curl -s http://$LOCALHOST/api/peers | jq '.peers[].height' | sort -nu | tail -n1)
+                ((local_count+=1))
+                if [ "$local_count" -gt "5" ]; then
+                        #If after 5 seconds the remote server does not respond
+                        echo "Localhost is not responding to get top_height"
+                        echo "Localhost is not responding to get top_height" >> $BLOCKHEIGHT_LOG
+                        HEIGHT="0"
+                        break
+                fi
 	done
 
         if ! [[ "$HEIGHT" =~ ^[0-9]+$ ]];
@@ -91,11 +100,20 @@ get_remote_height(){
 }
 
 get_local_height(){
+	local_count="0"
 	LOCAL_HEIGHT=`curl -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
 	while [ -z "$LOCAL_HEIGHT" ]
 	do
 	    	sleep 1
 		LOCAL_HEIGHT=`curl -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
+                ((local_count+=1))
+                if [ "$local_count" -gt "5" ]; then
+                        #If after 5 seconds the remote server does not respond
+                        echo "Localhost is not responding"
+                        echo "Localhost is not responding" >> $BLOCKHEIGHT_LOG
+                        LOCAL_HEIGHT="0"
+                        break
+                fi
 	done
 
         if ! [[ "$LOCAL_HEIGHT" =~ ^[0-9]+$ ]];
@@ -292,8 +310,9 @@ found_fork_alert(){
 		fi
 	   fi
 	echo "Starting reload $TIME" >> $BLOCKHEIGHT_LOG
-	   bash lisk.sh reload
-	   sleep 15
+	bash lisk.sh reload
+	sleep 15
+	localhost_check
 }
 
 local_height() {

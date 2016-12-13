@@ -293,7 +293,7 @@ while true; do
 	echo "<tr><td>Local consensus </td><td>$ACTUAL_BROADHASH_CONSENSUS %</td></tr>" >> $MANAGER_LOG
 	echo "<tr><td>Remote consensus </td><td>$REMOTE_CONSENSUS %</td></tr>" >> $MANAGER_LOG
 	echo "<tr><td>Forging </td><td>$forging</td></tr>" >> $MANAGER_LOG
-	echo "<tr><td><b>Next turn in</td><td>$NEXTTURN s</b></td></tr>" >> $MANAGER_LOG
+	echo "<tr><td>Next turn in</td><td><b><span id=\"timer\">$NEXTTURN s</span></b></td></tr>" >> $MANAGER_LOG
 	RESPONSE=$(curl -s http://$LOCALHOST/api/accounts/delegates?address=$DELEGATE_ADDRESS | jq '.delegates[] | select(.username=="'$DELEGATE_NAME'")')
 	PRODUCTIVITY=$(echo $RESPONSE | jq '.productivity')
 	PB=$(echo $RESPONSE | jq '.producedblocks')
@@ -306,6 +306,7 @@ while true; do
 	echo "<tr><td>Rank</td><td>$RATE</td></tr>" >> $MANAGER_LOG
 	echo "<tr><td>Approval</td><td>$APPR</td></tr>" >> $MANAGER_LOG
 	echo "</table>" >> $MANAGER_LOG
+	echo "<script>var nextTurn=$NEXTTURN;</script>" >> $MANAGER_LOG
         sleep 5
 done
 

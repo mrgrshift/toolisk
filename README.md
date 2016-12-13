@@ -42,8 +42,8 @@ After you install it you can run the following scripts:<br>
 `bash forging_manager.sh` <b>Use this script only in one of your servers</b>. This script will control forging status.<br>
 This is very important, do not run forging_manager.sh in two separate servers because you will be ending forging in two servers and will be bad for the network and your delegate.
 <br>
-###monitor.sh
-`node monitor.js` This script will take logs/forging_manager.log and publish it in http://yournodeip:9100/ (default port 9100), this way you can monitor the status of your servers in every phone/tablet/browser.
+###monitor.js
+`node monitor.js` This script will take logs/forging_manager.log and publish it in http://yournodeip:9100/ (default port 9100), this way you can monitor the status of your servers in any phone/tablet/browser.
 <br>
 #SSL Instalation
 If you want to enable SSL (recommendable) in every one of your servers run the following script:<br>

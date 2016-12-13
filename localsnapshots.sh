@@ -1,8 +1,8 @@
 #!/bin/bash
 #This script will download available snapshots to your localhost to prevent latency when a snapshot is needed
 
+rm -rf snapshots/
 mkdir -p snapshots/
-rm -rf snapshots/*
 
 declare -A SNAPSHOTS
 #DECLARE YOUR SNAPSHOTS FOR LISK TESTNET:
@@ -74,5 +74,5 @@ while true; do
 	echo "$TIME start new checkup"
 	check_updates
 	echo "--------------------------end of checkup"
-	sleep 3600 #every 60 minutes
+	sleep 1800 #every 30 minutes
 done

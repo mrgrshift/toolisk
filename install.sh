@@ -33,6 +33,11 @@ if [ -f "$1" ]; then
 		echo "You are installing this script for testnet"
 		VERSION="lisk-test"
 	;;
+        "--alerts-off")
+                echo "You are installing this script for mainnet"
+                VERSION="lisk-main"
+		ALERTS_OFF="true"
+        ;;
 	*)
                 echo "You are installing this script for mainnet"
                 VERSION="lisk-main"
@@ -131,9 +136,17 @@ echo " "
 echo "Now enter the information of your delegate."
 echo -n "Delegate name: "
 	read DELEGATE_NAME
+echo -n "Delegate address: "
+        read DELEGATE_ADDRESS
+
+RESPONSE=$(curl -s http://localhost:8000/api/accounts/delegates?address=3125853987625788223L | jq '.delegates[] | select(.username=="mrgr")')
+v1=$(echo $RESPONSE | jq '.publicKey')
+PUBLICKEY="${v1//\"/}"
+
+
 echo -n "Delegate passphrase: "
 	read SECRET
-echo -n "How you identify this server?: "
+echo -n "How you identify this server? (e.g. Main Server/Backup1): "
         read SERVER_NAME
 
 init=configtoolisk.sh
@@ -154,6 +167,7 @@ echo "MG_TO=\"$MG_TO\" #Email to" >> $init
 echo "MG_SUBJECT=\"$DELEGATE_NAME in Fork - failover activated successfully\"" >> $init
 echo "MG_TEXT=\"Description of the alert\"" >> $init
 echo "DELEGATE_NAME=\"$DELEGATE_NAME\"" >> $init
+echo "DELEGATE_ADDRESS=\"$DELEGATE_ADDRESS\"" >> $init
 echo "OFFSET=\"$scale\"" >> $init
 echo "IP_SERVER=\"$IP_SERVER\" #IP of the extra syncronized server" >> $init
 echo "HTTP=\"$HTTP\" #http or https if is activated" >> $init
@@ -165,21 +179,19 @@ echo "URL_REMOTE=\"\$HTTP://\$IP_SERVER:\$PORT/api/delegates/forging/enable\" #U
 echo "URL_REMOTE_DISABLE=\"\$HTTP://\$IP_SERVER:\$PORT/api/delegates/forging/disable\"" >> $init
 echo "URL_LOCAL=\"\$HTTP_LOCAL://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/enable\"" >> $init
 echo "URL_LOCAL_DISABLE=\"\$HTTP_LOCAL://127.0.0.1:\$LOCAL_PORT/api/delegates/forging/disable\"" >> $init
-echo "BLOCKHEIGHT_LOG=~/toolisk/logs/blockheight.log" >> $init
-echo "CONSENSUS_LOG=~/toolisk/logs/consensus.log" >> $init
-echo "MANAGER_LOG=~/toolisk/logs/manager.log" >> $init
+echo "BLOCKHEIGHT_LOG=~/toolisk/logs/sync_manager.log" >> $init
+echo "MANAGER_LOG=~/toolisk/logs/forging_manager.log" >> $init
 echo "LOCAL_SNAPSHOTS=~/toolisk/snapshots/" >> $init
-echo "PUBLICKEY=\"\"" >> $init
+echo "PUBLICKEY=\"$PUBLICKEY\"" >> $init
 echo "URL_LOCAL_FORGING_STATUS=\"http://localhost:8000/api/delegates/forging/status?publicKey=\$PUBLICKEY\"" >> $init
 echo "URL_REMOTE_FORGING_STATUS=\"http://$IP_SERVER:8000/api/delegates/forging/status?publicKey=\$PUBLICKEY\"" >> $init
 echo "USERTOOL=\"$USER\"" >> $init
 echo "SERVER_NAME=\"$SERVER_NAME\""
+echo "ALERTS_OFF=\"$ALERTS_OFF\"" >> $init
 echo "cd /home/$USER/$VERSION/" >> $init
 
-chmod u+x blockheight.sh
-chmod u+x consensus.sh
-chmod u+x manager.sh
-chmod u+x startTool.sh
+chmod u+x sync_manager.sh
+chmod u+x forging_manager.sh
 
 mkdir -p logs/
 
@@ -239,8 +251,8 @@ read -p "Do you want to proceed (y/n)?" -n 1 -r
                            echo "sudo rm /etc/rc.local" >> temp.sh
 			   echo "echo \"#!/bin/sh -e\" > /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 			   echo "echo \"/bin/su $USER -c \\\"cd $(pwd); /usr/bin/screen -dmS startup_lisk bash -c $(pwd)/startup.sh'; exec bash'\\\" > $(pwd)/logs/rc.log.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
-			   echo "echo \"sleep 10\" >> /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
-                           echo "echo \"/bin/su $USER -c \\\"cd $(pwd); bash -c $(pwd)/startTool.sh'; exec bash'\\\" > $(pwd)/logs/rc.local.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
+			   echo "echo \"sleep 15\" >> /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
+                           #echo "echo \"/bin/su $USER -c \\\"cd $(pwd); bash -c $(pwd)/sync_manager.sh'; exec bash'\\\" > $(pwd)/logs/rc.local.log\" | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 			   echo "echo \"exit 0\" >> /etc/rc.local | sudo tee -a /etc/rc.local > /dev/null" >> temp.sh
 				sudo bash temp.sh
 			   echo -e "done.";

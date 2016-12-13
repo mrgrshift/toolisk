@@ -5,6 +5,7 @@ First make sure you do not have your SECRET set up in the lisk configuration (co
 
 #Requisites
 
+	- You need to have jq installed. If you are in Ubuntu: sudo apt-get install jq
 	- You need to have an account in mailgun.com, and have authorized recipients.
 	- If you want failover you need to have an extra synchronized server. 
 		- In this extra synchronized server go to config.json and enter in whitelist (api & forging) the IP of the node you are backing up.

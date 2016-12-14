@@ -261,6 +261,47 @@ check_github_updates(){
 }
 
 
+forging_test(){
+	echo "This test will enable forging and disable it into your remote server. This to ensure your delegate node is capable to do this commands."
+
+        read -p "Do you want to continue (y/n)?" -n 1 -r
+        if [[  $REPLY =~ ^[Yy]$ ]]
+           then
+		echo " "
+		echo -n "... "
+		curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE
+		RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
+        	if [ "$RESPONSE" = "true" ]; then
+		  echo -e "${GREEN}Forging enabled successfully in remote server.${OFF}"
+		  echo -n "... "
+		  curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE
+		  RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
+		   if [ "$RESPONSE" = "false" ]; then
+			echo -e "${GREEN}Forging disabled successfully in remote server.${OFF}"
+			echo " "
+			echo " "
+			echo "***Your installation is perfect!"
+		   else
+			echo -e "${RED}Error:${OFF} $RESPONSE"
+			echo "Error in disabling forging, please disable forging manually to prevent future errors."
+			echo " "
+			echo " "
+			echo "***Your installation is good, you can use failover."
+		   fi
+		else
+		   echo " "
+		   echo -e "${RED}Error:${OFF} $RESPONSE"
+		   echo -e "${RED}***Something is wrong, please run again bash install.sh and make sure you have entered the right information.${OFF}"
+		fi
+           else
+                echo " "
+                echo "Tests for failover has been stopped."
+           fi
+}
+
+
+if [ "$1" != "test"  ]; then
+echo "Starting forging manager"
 while true; do
 	localhost_check
         top_height
@@ -336,5 +377,7 @@ while true; do
 	echo "<script>var nextTurn=$NEXTTURN;</script>" >> $MANAGER_LOG
         sleep 5
 done
-
+else
+	forging_test
+fi
 

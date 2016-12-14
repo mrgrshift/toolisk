@@ -62,6 +62,7 @@ fi
 if [[  $OK -eq 1 ]]
    then
 
+if [ "$ALERTS_OFF" != "true" ]; then
 echo "The following is needed if you want alerts in your email"
 echo "Please enter the following information:"
 echo -n "Api key: "
@@ -84,6 +85,7 @@ echo -n "Email to: "
                 echo "Please run the installer again"
                 exit 1
            fi
+fi
 
         read -p "How many servers are you using (1 or 2)?" -n 1 -r
         if [[  $REPLY =~ ^[12]$ ]]

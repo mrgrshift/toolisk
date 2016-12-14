@@ -230,7 +230,7 @@ rebuild_alert(){
 	        MG_SUBJECT="$DELEGATE_NAME in $SERVER_NAME rebuild started T$NEXTTURN-- Your delegate is not forging now"
 	        MG_TEXT="$DELEGATE_NAME in $SERVER_NAME rebuild started next turn $NEXTTURN"$'\r\n'"Highest: $HEIGHT - Local: $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS"$'\r\n'"Forging not enabled because there's no backup node installed"
 	  fi
-	if ! [ -z "$ALERTS_OFF" ]; then
+	if [ "$ALERTS_OFF" != "true" ]; then
 	      curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 	fi
 }
@@ -245,7 +245,7 @@ post_rebuild(){
 		get_nextturn
 		BAD_CONSENSUS="0"
 
-	if ! [ -z "$ALERTS_OFF" ]; then
+	if [ "$ALERTS_OFF" != "true" ]; then
                 MG_SUBJECT="$DELEGATE_NAME sync ended $NEXTTURN ($ACTUAL_BROADHASH_CONSENSUS %) Highest: $HEIGHT - Local: $LOCAL_HEIGHT"
                 MG_TEXT="$DELEGATE_NAME rebuild synchronization ended. Next turn: $NEXTTURN s Highest: $HEIGHT - rebuild: $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %)"
                 curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
@@ -305,7 +305,7 @@ found_fork_alert(){
                    MG_SUBJECT="$DELEGATE_NAME reload in $SERVER_NAME found fork.$NEXTTURN Forging $RESPONSE"
                    MG_TEXT="$DELEGATE_NAME reload started in $SERVER_NAME -- Next turn $NEXTTURN s."$'\r\n'"Found fork: "$'\r\n'"$FORK "$'\r\n\r\n'"Forging not enabled. Response:"$'\r\n'"$RESPONSE"
                 fi
-		if ! [ -z "$ALERTS_OFF" ]; then
+		if [ "$ALERTS_OFF" != "true" ]; then
                    curl -s --user "api:$API_KEY" $MAILGUN -F from="$MG_FROM" -F to="$MG_TO" -F subject="$MG_SUBJECT" -F text="$MG_TEXT"
 		fi
 	   fi

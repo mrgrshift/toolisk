@@ -269,12 +269,12 @@ forging_test(){
            then
 		echo " "
 		echo -n "... "
-		curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE
+		R1=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE)
 		RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
         	if [ "$RESPONSE" = "true" ]; then
 		  echo -e "${GREEN}Forging enabled successfully in remote server.${OFF}"
 		  echo -n "... "
-		  curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE
+		  R1=$(curl -s -k -H "Content-Type: application/json" -X POST -d "{\"secret\":\"$SECRET\"}" $URL_REMOTE_DISABLE)
 		  RESPONSE=$(curl -s $URL_REMOTE_FORGING_STATUS | jq '.enabled') #true or false
 		   if [ "$RESPONSE" = "false" ]; then
 			echo -e "${GREEN}Forging disabled successfully in remote server.${OFF}"
@@ -282,7 +282,7 @@ forging_test(){
 			echo " "
 			echo "***Your installation is perfect!"
 		   else
-			echo -e "${RED}Error:${OFF} $RESPONSE"
+			echo -e "${RED}Error:${OFF} $R1"
 			echo "Error in disabling forging, please disable forging manually to prevent future errors."
 			echo " "
 			echo " "
@@ -290,7 +290,7 @@ forging_test(){
 		   fi
 		else
 		   echo " "
-		   echo -e "${RED}Error:${OFF} $RESPONSE"
+		   echo -e "${RED}Error:${OFF} $R1"
 		   echo -e "${RED}***Something is wrong, please run again bash install.sh and make sure you have entered the right information.${OFF}"
 		fi
            else
@@ -322,7 +322,13 @@ while true; do
 	TIME=$(date +"%H:%M") #for your local time add:  -d '6 hours ago')
    if ! [ -z "$IP_SERVER" ]; then
         diff=$(( $HEIGHT - $LOCAL_HEIGHT ))
+        if [ "$diff" -eq "-1" ] || [ "$diff" -eq "1" ]; then
+                diff="0"
+        fi
         diff2=$(( $HEIGHT - $REMOTE_HEIGHT ))
+        if [ "$diff2" -eq "-1" ] || [ "$diff2" -eq "1" ]; then
+                diff2="0"
+        fi
         if [ "$diff" -gt "$diff2" ] || ([ "$ACTUAL_BROADHASH_CONSENSUS" -lt "51" ] && [ "$diff2" -lt "4" ])
         then
                 #enable remote forging
@@ -349,8 +355,8 @@ while true; do
 	else
 	   color=$GREEN
 	fi
-	echo -e "$diff > $diff2  or $ACTUAL_BROADHASH_CONSENSUS < 51 -- ${color}NEXT TURN IN $NEXTTURN s${OFF} -- Remote consensus ($REMOTE_CONSENSUS %)"
-        echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging"
+        echo -e "${color}NEXT TURN IN $NEXTTURN s${OFF}         Local  $LOCAL_HEIGHT -- Diff $diff -- Consensus $ACTUAL_BROADHASH_CONSENSUS % ($BAD_CONSENSUS)"
+        echo "Top height $HEIGHT        Remote $REMOTE_HEIGHT -- Diff $diff2 -- Consensus $REMOTE_CONSENSUS % -- $TIME ::: forging: $forging"
 #        echo "Top $HEIGHT : local $LOCAL_HEIGHT ($ACTUAL_BROADHASH_CONSENSUS %) $BAD_CONSENSUS - remote $REMOTE_HEIGHT -- $TIME ::: forging: $forging -- NEXT TURN IN $NEXTTURN s" >> $MANAGER_LOG
 
 	#Actual status report

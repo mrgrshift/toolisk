@@ -26,8 +26,8 @@ localhost_check(){
 	   else
 		echo -e "${RED}Your localhost is not responding.${OFF}"
 		echo "Your localhost is not responding.." >> $BLOCKHEIGHT_LOG
-		if [ "$l_count" -gt "3" ]; then
-		   #If localhost not respond in 1 minute do reload
+		if [ "$l_count" -gt "1" ]; then
+		   #If localhost not respond in 30 seconds do reload
                    echo "reload.."
 		   echo "reload.." >> $BLOCKHEIGHT_LOG
 		   bash lisk.sh reload

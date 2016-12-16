@@ -18,7 +18,7 @@ NEXTTURN="0"
 localhost_check(){
    l_count="0"
    while true; do
-	   STATUS=$(curl -sI --max-time 300 --connect-timeout 10 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
+	   STATUS=$(curl -sI --max-time 3 --connect-timeout 3 "http://$LOCALHOST/api/peers" | grep "HTTP" | cut -f2 -d" ")
 	   if [[ "$STATUS" =~ ^[0-9]+$ ]]; then
 	     if [ "$STATUS" -eq "200" ]; then
 		break
@@ -255,9 +255,20 @@ post_rebuild(){
 ## Thank you corsaro for this improvement
 check_if_rebuild_finish(){
 	while true; do
+		localhost_check
 		s1=`curl -k -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
 		sleep 30
+		localhost_check
 		s2=`curl -k -s "http://$LOCALHOST/api/loader/status/sync"| jq '.height'`
+
+		if ! [[ "$s1" =~ ^[0-9]+$ ]]; then
+	            s1="0"
+		    s2="1001"
+	        fi
+                if ! [[ "$s2" =~ ^[0-9]+$ ]]; then
+                    s1="0"
+		    s2="1001"
+                fi
 
 		diff=$(( $s2 - $s1 ))
 		if [ "$diff" -gt "10" ]
@@ -357,7 +368,7 @@ local_height() {
                 BAD_CONSENSUS="0"
         fi
 
-        if [ "$BAD_CONSENSUS" -eq "8" ] && [ "$diff" -lt "4" ] && [ "$NEXTTURN" -gt "30" ]
+        if [ "$BAD_CONSENSUS" -eq "8" ] && [ "$diff" -lt "4" ] && [ "$NEXTTURN" -gt "70" ]
         then
                 echo "lisk.sh reload"
                 bash lisk.sh reload

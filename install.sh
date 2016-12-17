@@ -141,7 +141,7 @@ echo -n "Delegate name: "
 echo -n "Delegate address: "
         read DELEGATE_ADDRESS
 
-RESPONSE=$(curl -s http://localhost:8000/api/accounts/delegates?address=3125853987625788223L | jq '.delegates[] | select(.username=="mrgr")')
+RESPONSE=$(curl -s http://localhost:8000/api/accounts/delegates?address=$DELEGATE_ADDRESS | jq '.delegates[] | select(.username=="'$DELEGATE_NAME'")')
 v1=$(echo $RESPONSE | jq '.publicKey')
 PUBLICKEY="${v1//\"/}"
 

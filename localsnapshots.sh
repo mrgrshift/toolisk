@@ -9,6 +9,7 @@ declare -A SNAPSHOTS
 #	SNAPSHOTS["testnet"]="https://testnet-snapshot.lisknode.io/blockchain.db.gz"
 
 #DECLARE YOUR SNAPSHOTS FOR LISK MAINNET:
+	SNAPSHOTS["latest"]="https://snapshot.lisknode.io/latest.gz"
 	SNAPSHOTS["redsn0w2"]="https://snap.lsknode.org/blockchain.db.gz"
         SNAPSHOTS["official"]="https://downloads.lisk.io/lisk/main/blockchain.db.gz"    ## Official
         SNAPSHOTS["isabella"]="https://snapshot.liskwallet.net/blockchain.db.gz"        ## isabella
